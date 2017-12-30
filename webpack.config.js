@@ -1,11 +1,12 @@
 'use strict'
 
 const path = require('path');
+const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
-module.exposrt = {
+module.exports = {
     entry: {
         app: [
-            'index.js'
+            './src/index.js'
         ]
     },
     output: {
@@ -13,17 +14,44 @@ module.exposrt = {
         filename: '[name].js'
     },
     module: {
-        loader: [
+        rules: [
             {
                 test: /\.html$/,
                 exclude: /node_modules/,
-                loader: 'file-loader?name=[name].[ext]'
+                use: 'file-loader?name=[name].[ext]'
+            },
+            {
+                test: /\.css$/,
+                use: ExtractTextPlugin.extract({
+                    fallback: 'style-loader',
+                    use: 'css-loader'
+                })
             },
             {
                 test: /\.elm$/,
                 exclude: [/node_modules/, /elm-stuff/, /Stylesheets\.elm$/],
-                loader: 'elm-webpack-loader'
+                use: [
+                    'elm-hot-loader',
+                    'elm-webpack-loader?debug=true'
+                ]
+            },
+            {
+                test: /Stylesheets\.elm$/,
+                use: ExtractTextPlugin.extract({
+                    fallback: 'style-loader',
+                    use: [
+                        'css-loader',
+                        'elm-css-webpack-loader'
+                    ]
+                })
             }
         ]
+    },
+    plugins: [
+        new ExtractTextPlugin('style.css')
+    ],
+    devServer: {
+        inline: true,
+        stats: 'errors-only'
     }
 };
