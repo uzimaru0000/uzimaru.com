@@ -1,22 +1,7 @@
 module Main exposing (..)
 
 import Html exposing (Html, program, text)
-
-
--- model
-
-
-type alias Model =
-    String
-
-
-
--- message
-
-
-type Msg
-    = NoOp
-
+import Model exposing (..)
 
 
 -- view
