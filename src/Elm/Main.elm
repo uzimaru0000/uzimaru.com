@@ -2,6 +2,9 @@ module Main exposing (..)
 
 import Html exposing (Html, program, text)
 import Model exposing (..)
+import Http exposing (getString, send)
+import Markdown exposing (toHtml)
+import Port exposing (..)
 
 
 -- view
@@ -9,7 +12,7 @@ import Model exposing (..)
 
 view : Model -> Html Msg
 view model =
-    text "hoge"
+    toHtml [] model
 
 
 
@@ -19,8 +22,23 @@ view model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        GetUrl url ->
+            ( model, getData <| url ++ "/post/index.md" )
+
+        GetData (Ok str) ->
+            ( str, Cmd.none )
+
+        GetData (Err _) ->
+            ( model, Cmd.none )
+
         _ ->
             ( model, Cmd.none )
+
+
+getData : String -> Cmd Msg
+getData url =
+    send GetData <|
+        getString url
 
 
 
@@ -30,8 +48,8 @@ update msg model =
 main : Program Never Model Msg
 main =
     program
-        { init = "hoge" ! []
+        { init = ( "hoge", requestUrl () )
         , view = view
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = \_ -> getUrl GetUrl
         }

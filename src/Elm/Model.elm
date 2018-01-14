@@ -1,5 +1,8 @@
 module Model exposing (..)
 
+import Http
+
+
 -- Model
 
 
@@ -13,3 +16,5 @@ type alias Model =
 
 type Msg
     = NoOp
+    | GetUrl String
+    | GetData (Result Http.Error String)
