@@ -1,22 +1,37 @@
 module Model exposing (..)
 
-import Http
-import Date exposing (Date)
+import Html exposing (Html)
 import Material
 
 
 -- Model
 
 
-type alias Content =
-    { title : String
-    , content : String
-    , date : Date
+type alias CardInfo =
+    { id : Int
+    , title : String
+    , imgUrl : String
+    , content : Content
+    , isActive : Bool
     }
 
+
+type ContentType
+    = Normal
+    | SubTitle
+    | Link
+
+
+type alias Content =
+    { data : List String
+    , subData : List String
+    , type_ : ContentType
+    }
+
+
 type alias Model =
-    { url : String
-    , content : Content
+    { contents : List CardInfo
+    , focusCard : Maybe CardInfo
     , mdl : Material.Model
     }
 
@@ -27,6 +42,7 @@ type alias Model =
 
 type Msg
     = NoOp
-    | GetUrl String
-    | GetData (Result Http.Error String)
+    | MouseEnter Int
+    | MouseLeave Int
+    | CardForcus CardInfo
     | Mdl (Material.Msg Msg)
