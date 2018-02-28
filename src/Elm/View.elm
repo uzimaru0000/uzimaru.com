@@ -50,17 +50,19 @@ mainContent model =
         ]
 
 
-card : String -> Color.Color -> String -> Html msg -> Html msg
+card : String -> Color.Color -> String -> Html Msg -> Html Msg
 card title bgColor imgUrl content =
     Card.view
         [ Options.css "width" "90%"
         , Options.css "margin" "auto"
         , Elevation.e4
+        , Options.onClick NoOp
         ]
         [ Card.title
             [ Color.background bgColor
             , Options.css "height" "256px"
             , Options.css "padding" "0"
+            , Options.css "background" ("url(http://placehold.jp/512x512.png) center / cover")
             ]
             [ Card.head
                 [ Color.text Color.white
