@@ -10,7 +10,7 @@ module.exports = {
         ]
     },
     output: {
-        path: __dirname,
+        path: path.join(__dirname, 'doc'),
         filename: '[name].js'
     },
     module: {
@@ -44,6 +44,10 @@ module.exports = {
                         'elm-css-webpack-loader'
                     ]
                 })
+            },
+            {
+                test: /\.(png|jpg)$/,
+                use: 'file-loader?name=[name].[ext]&outputPath=Assets/'
             }
         ]
     },

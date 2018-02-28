@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-      "dev": "webpack-dev-server --hot --port 3000",
-      "build": "webpack"
+    "dev": "webpack-dev-server --hot --port 3000",
+    "build": "webpack"
   },
   "keywords": [],
   "author": "",

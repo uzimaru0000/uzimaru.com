@@ -1,6 +1,7 @@
 'use strict'
 
 require('./index.html');
+require('./Assets/dog.jpg');
 
 const elm = require('./Elm/Main.elm');
 

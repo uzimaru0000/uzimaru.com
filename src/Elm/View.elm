@@ -62,7 +62,7 @@ card title bgColor imgUrl content =
             [ Color.background bgColor
             , Options.css "height" "256px"
             , Options.css "padding" "0"
-            , Options.css "background" ("url(http://placehold.jp/512x512.png) center / cover")
+            , Options.css "background" ("url(./Assets/dog.jpg) center / cover")
             ]
             [ Card.head
                 [ Color.text Color.white
