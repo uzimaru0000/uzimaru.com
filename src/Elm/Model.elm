@@ -32,6 +32,7 @@ type alias Content =
 type alias Model =
     { contents : List CardInfo
     , focusCard : Maybe CardInfo
+    , firstModal : Bool
     , mdl : Material.Model
     }
 
@@ -44,5 +45,5 @@ type Msg
     = NoOp
     | MouseEnter Int
     | MouseLeave Int
-    | CardForcus CardInfo
+    | CardFocus (Maybe CardInfo)
     | Mdl (Material.Msg Msg)

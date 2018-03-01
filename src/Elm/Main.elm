@@ -18,6 +18,9 @@ update msg model =
         MouseLeave id ->
             { model | contents = List.map (changeCardState id False) model.contents } ! []
 
+        CardFocus info ->
+            { model | focusCard = info, firstModal = True } ! []
+
         Mdl msg_ ->
             Material.update Mdl msg_ model
 
@@ -63,7 +66,7 @@ contentData =
 main : Program Never Model Msg
 main =
     program
-        { init = ( Model contentData (contentData |> List.head) Material.model, Cmd.none )
+        { init = ( Model contentData Nothing False Material.model, Cmd.none )
         , view = view
         , update = update
         , subscriptions = always Sub.none

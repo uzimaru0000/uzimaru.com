@@ -1,6 +1,6 @@
 module View exposing (..)
 
-import Html exposing (Html, text, a, p)
+import Html exposing (Html, text, a, h4, p)
 import Html.Attributes exposing (href)
 import Model exposing (..)
 import Material.Options as Options
@@ -22,16 +22,21 @@ import Material.Icon as Icon
 
 view : Model -> Html Msg
 view model =
-    Layout.render Mdl
-        model.mdl
-        [ Layout.fixedHeader ]
-        { header = [ text "" ]
-        , drawer = []
-        , tabs = ( [], [] )
-        , main = [ mainContent model
-                 , dialog model
-                 ]
-        }
+    Options.div []
+        [ Layout.render Mdl
+            model.mdl
+            [ Layout.fixedHeader ]
+            { header = [ text "" ]
+            , drawer = []
+            , tabs = ( [], [] )
+            , main =
+                [ mainContent model ]
+            }
+        , if model.firstModal then
+            dialog model
+          else
+            text ""
+        ]
         |> Scheme.topWithScheme Color.LightBlue Color.Cyan
 
 
@@ -48,43 +53,75 @@ mainContent model =
 
 dialog : Model -> Html Msg
 dialog model =
-    Dialog.view []
-        [ Dialog.title [] [ text "test" ]
-        , Dialog.content []
-            [ p [] [ text "dialogTest" ]
-            , p [] [ text <| toString model.focusCard ]
+    Options.div
+        [ Options.cs "overLap"
+        , if model.focusCard == Nothing then
+            Options.cs "hide"
+          else
+            Options.cs "show"
+        ]
+        [ grid
+            [ Elevation.e4
+            , Color.background Color.white
+            , Options.cs "window"
             ]
-        , Dialog.actions []
-            [ Button.render Mdl
-                [ 0 ]
-                model.mdl
-                [ Dialog.closeOn "click"
-                , Button.icon
-                ]
-                [ Icon.i "close" ]
-            ]
+            (case model.focusCard of
+                Just c ->
+                    [ cell
+                        [ size All 6 ]
+                        [ Options.span [ Typo.display3, Typo.center, Color.text Color.black ] [ text "Title" ] ]
+                    , cell [ size All 1, offset All 5 ]
+                        [ Button.render Mdl
+                            [ 0 ]
+                            model.mdl
+                            [ Button.icon
+                            , Options.onClick <| CardFocus Nothing
+                            ]
+                            [ Icon.i "close" ]
+                        ]
+                    , cell [ size All 12 ]
+                        [ text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." ]
+                    ]
+
+                -- [ cell [ size All 4, Color.background (Color.color Color.Green Color.S500) ]
+                --     [ h4 [] [ text "Cell 1" ]
+                --     ]
+                -- , cell [ offset All 2, size All 4, Color.background (Color.color Color.Green Color.S500) ]
+                --     [ h4 [] [ text "Cell 2" ]
+                --     , p [] [ text "This cell is offset by 2" ]
+                --     ]
+                -- , cell [ size All 6, Color.background (Color.color Color.Green Color.S500) ]
+                --     [ h4 [] [ text "Cell 3" ]
+                --     ]
+                -- , cell [ size All 12, Color.background (Color.color Color.Green Color.S500), Grid.stretch ]
+                --     [ h4 [] [ text "Cell 4" ]
+                --     , p [] [ text "Size varies with device" ]
+                --     ]
+                -- ]
+                Nothing ->
+                    []
+            )
         ]
 
 
 card : CardInfo -> Html Msg
-card { id, title, imgUrl, content, isActive } =
+card info =
     Card.view
         [ Options.css "width" "90%"
         , Options.css "margin" "auto"
-        , if isActive then
+        , if info.isActive then
             Elevation.e8
           else
             Elevation.e4
         , Elevation.transition 300
-        , Options.onClick NoOp
-        , Options.onMouseEnter <| MouseEnter id
-        , Options.onMouseLeave <| MouseLeave id
-        , Dialog.openOn "click"
+        , Options.onClick <| CardFocus (Just info)
+        , Options.onMouseEnter <| MouseEnter info.id
+        , Options.onMouseLeave <| MouseLeave info.id
         ]
         [ Card.title
             [ Options.css "height" "256px"
             , Options.css "padding" "0"
-            , Options.css "background" ("url(" ++ imgUrl ++ ") center / cover")
+            , Options.css "background" ("url(" ++ info.imgUrl ++ ") center / cover")
             , Typo.title
             , Typo.uppercase
             ]
@@ -94,11 +131,11 @@ card { id, title, imgUrl, content, isActive } =
                 , Options.css "padding" "16px"
                 , Options.css "width" "100%"
                 ]
-                [ text title ]
+                [ text info.title ]
             ]
         , Card.text
             []
-            [ createList content ]
+            [ createList info.content ]
         ]
 
 
