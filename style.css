@@ -1,0 +1,108 @@
+.overLap {
+    position: fixed;
+    display: flex;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+}
+
+@media screen and (min-width: 769px){
+    .window {
+        width: 50%;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .window {
+        width: 65%;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .window {
+        width: 80%;
+    }
+}
+
+.window {
+    box-sizing: border-box;
+}
+
+
+.show > .window {
+    animation: show 500ms ease 0s;
+    padding: 4%;
+}
+
+.hide > .window {
+    animation: hide 500ms ease 0s;
+    padding: 0;
+}
+
+.show {
+    animation: overLapShow 500ms ease 0s;
+    background: rgba(0, 0, 0, 0.2);
+    height: 100%;
+}
+
+.hide {
+    animation: overLapHide 500ms ease 0s;
+    background: rgba(0, 0, 0, 0);
+    height: 0;
+}
+
+@keyframes show {
+    0% {
+        transform: scale(0);
+    }
+    100% {
+        transform: scaleY(100%);
+    }
+}
+
+@keyframes hide {
+    0% {
+        transform: scale(100%);
+        padding: 4%;
+    }
+    99% {
+        padding: 4%;
+    }
+    100% {
+        transform: scale(0);
+        padding: 0;
+    } 
+}
+
+@keyframes overLapShow {
+    0% {
+        background: rgba(0, 0, 0, 0);
+        height: 0;
+    }
+    1% {
+        height: 100%; 
+    }
+    100% {
+        background: rgba(0, 0, 0, 0.2);
+        height: 100%;
+    }
+}
+
+@keyframes overLapHide {
+    0% {
+        background: rgba(0, 0, 0, 0.2);
+        height: 100%;
+    }
+    99% {
+        height: 100%;
+    }
+    100% {
+        background: rgba(0, 0, 0, 0);
+        height: 0;
+    }
+}
