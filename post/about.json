@@ -1,0 +1,8 @@
+{
+    "title" : "about me",
+    "data" : ["Name", "Age", "Skill"],
+    "subData" : ["Uzimaru", "19", "Unity, Elm"],
+    "type" : 1,
+    "contentUrl" : "post/about.md",
+    "imgUrl" : "assets/icon2.png"
+}

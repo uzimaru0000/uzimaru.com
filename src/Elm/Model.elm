@@ -1,6 +1,7 @@
 module Model exposing (..)
 
-import Html exposing (Html)
+import Content exposing (ContentType, Post)
+import Http
 import Material
 
 
@@ -9,23 +10,9 @@ import Material
 
 type alias CardInfo =
     { id : Int
-    , title : String
-    , imgUrl : String
-    , content : Content
+    , post : Post
+    , content : String
     , isActive : Bool
-    }
-
-
-type ContentType
-    = Normal
-    | SubTitle
-    | Link
-
-
-type alias Content =
-    { data : List String
-    , subData : List String
-    , type_ : ContentType
     }
 
 
@@ -43,6 +30,9 @@ type alias Model =
 
 type Msg
     = NoOp
+    | GetHost String
+    | GetPost String (Result Http.Error Post)
+    | GetContent Int (Result Http.Error String)
     | MouseEnter Int
     | MouseLeave Int
     | CardFocus (Maybe CardInfo)

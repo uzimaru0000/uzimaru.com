@@ -11,10 +11,28 @@
     justify-content: center;
 }
 
+@media screen and (min-width: 769px){
+    .window {
+        width: 50%;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .window {
+        width: 65%;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .window {
+        width: 80%;
+    }
+}
+
 .window {
     box-sizing: border-box;
-    width: 50%;
 }
+
 
 .show > .window {
     animation: show 500ms ease 0s;

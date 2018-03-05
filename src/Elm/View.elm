@@ -3,6 +3,8 @@ module View exposing (..)
 import Html exposing (Html, text, a, h4, p)
 import Html.Attributes exposing (href)
 import Model exposing (..)
+import Content exposing (ContentType(..), Post)
+import Markdown exposing (toHtml)
 import Material.Options as Options
 import Material.Color as Color
 import Material.Scheme as Scheme
@@ -12,7 +14,6 @@ import Material.Typography as Typo
 import Material.Grid as Grid exposing (grid, cell, size, offset, align, Device(..), Align(..))
 import Material.Card as Card
 import Material.List as Lists
-import Material.Dialog as Dialog
 import Material.Button as Button
 import Material.Icon as Icon
 
@@ -29,8 +30,7 @@ view model =
             { header = [ text "" ]
             , drawer = []
             , tabs = ( [], [] )
-            , main =
-                [ mainContent model ]
+            , main = [ mainContent model ]
             }
         , if model.firstModal then
             dialog model
@@ -47,7 +47,7 @@ mainContent model =
         , Options.css "margin" "auto"
         ]
         (model.contents
-            |> List.map (\c -> cell [ size All 4 ] [ card c ])
+            |> List.map (\c -> cell [ size All 4, Grid.stretch ] [ card c ])
         )
 
 
@@ -68,9 +68,14 @@ dialog model =
             (case model.focusCard of
                 Just c ->
                     [ cell
-                        [ size All 6 ]
-                        [ Options.span [ Typo.display3, Typo.center, Color.text Color.black ] [ text "Title" ] ]
-                    , cell [ size All 1, offset All 5 ]
+                        [ size Desktop 11, size Phone 3, size Tablet 7 ]
+                        [ Options.span
+                            [ Typo.display1
+                            , Typo.uppercase
+                            ]
+                            [ text c.post.title ]
+                        ]
+                    , cell [ size All 1 ]
                         [ Button.render Mdl
                             [ 0 ]
                             model.mdl
@@ -79,25 +84,10 @@ dialog model =
                             ]
                             [ Icon.i "close" ]
                         ]
-                    , cell [ size All 12 ]
-                        [ text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." ]
+                    , cell [ size Desktop 12, size Tablet 8, size Phone 4 ]
+                        [ toHtml [] c.content ]
                     ]
 
-                -- [ cell [ size All 4, Color.background (Color.color Color.Green Color.S500) ]
-                --     [ h4 [] [ text "Cell 1" ]
-                --     ]
-                -- , cell [ offset All 2, size All 4, Color.background (Color.color Color.Green Color.S500) ]
-                --     [ h4 [] [ text "Cell 2" ]
-                --     , p [] [ text "This cell is offset by 2" ]
-                --     ]
-                -- , cell [ size All 6, Color.background (Color.color Color.Green Color.S500) ]
-                --     [ h4 [] [ text "Cell 3" ]
-                --     ]
-                -- , cell [ size All 12, Color.background (Color.color Color.Green Color.S500), Grid.stretch ]
-                --     [ h4 [] [ text "Cell 4" ]
-                --     , p [] [ text "Size varies with device" ]
-                --     ]
-                -- ]
                 Nothing ->
                     []
             )
@@ -121,7 +111,7 @@ card info =
         [ Card.title
             [ Options.css "height" "256px"
             , Options.css "padding" "0"
-            , Options.css "background" ("url(" ++ info.imgUrl ++ ") center / cover")
+            , Options.css "background" ("url(" ++ info.post.imgUrl ++ ") center / cover")
             , Typo.title
             , Typo.uppercase
             ]
@@ -131,27 +121,27 @@ card info =
                 , Options.css "padding" "16px"
                 , Options.css "width" "100%"
                 ]
-                [ text info.title ]
+                [ text info.post.title ]
             ]
         , Card.text
             []
-            [ createList info.content ]
+            [ createList info.post ]
         ]
 
 
-createList : Content -> Html Msg
-createList { data, subData, type_ } =
+createList : Post -> Html Msg
+createList post =
     Lists.ul []
-        (case type_ of
+        (case post.type_ of
             Normal ->
-                List.map normalList data
+                List.map normalList post.data
 
             SubTitle ->
-                List.map2 (,) data subData
+                List.map2 (,) post.data post.subData
                     |> List.map subTitleList
 
             Link ->
-                List.map2 (,) data subData
+                List.map2 (,) post.data post.subData
                     |> List.map linkList
         )
 
