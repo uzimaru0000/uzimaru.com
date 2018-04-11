@@ -9,9 +9,9 @@ import Material
 -- update
 
 
-getPost : String -> String -> Cmd Msg
-getPost host url =
-    Http.send (GetPost host) <|
+getPost : String -> (Int, String) -> Cmd Msg
+getPost host (id, url) =
+    Http.send (GetPost host id) <|
         (Http.get (String.join "/" [ host, url ]) postDecoder)
 
 
@@ -33,13 +33,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GetHost host ->
-            model ! [ List.map (getPost host) postUrl |> Cmd.batch ]
+            model ! [ postUrl |> List.indexedMap (,) |> List.map (getPost host) |> Cmd.batch ]
 
-        GetPost host (Ok post) ->
+        GetPost host id (Ok post) ->
             let
-                id =
-                    List.length model.contents
-
                 cardInfo =
                     { id = id
                     , post = post
@@ -49,6 +46,7 @@ update msg model =
 
                 contents =
                     cardInfo :: model.contents
+                        |> List.sortBy .id
             in
                 { model | contents = contents } ! [ getContent id (host ++ "/" ++ post.contentUrl) ]
 
@@ -65,6 +63,12 @@ update msg model =
                             )
             in
                 { model | contents = newContents } ! []
+
+        GetPost _ _ (Err err) ->
+            let
+                a = Debug.log "error" err
+            in
+                model ! []
 
         MouseEnter id ->
             { model | contents = List.map (changeCardState id True) model.contents } ! []

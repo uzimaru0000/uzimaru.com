@@ -1,8 +1,6 @@
 {
     "title" : "links",
-    "data" : ["GitHub", "Twitter", "Facebook"],
-    "subData" : ["#", "#", "#"],
-    "type" : 2,
+    "data" : ["GitHub", "Twitter", "Facebook", "etc..."],
     "contentUrl" : "post/links.md",
-    "imgUrl" : ""
+    "imgUrl" : "assets/link.png"
 }

@@ -1,9 +1,8 @@
 module View exposing (..)
 
 import Html exposing (Html, text, a, h4, p)
-import Html.Attributes exposing (href)
 import Model exposing (..)
-import Content exposing (ContentType(..), Post)
+import Content exposing (Post)
 import Markdown exposing (toHtml)
 import Material.Options as Options
 import Material.Color as Color
@@ -37,7 +36,7 @@ view model =
           else
             text ""
         ]
-        |> Scheme.topWithScheme Color.LightBlue Color.Cyan
+        |> Scheme.topWithScheme Color.Green Color.Indigo
 
 
 mainContent : Model -> Html Msg
@@ -111,7 +110,7 @@ card info =
         [ Card.title
             [ Options.css "height" "256px"
             , Options.css "padding" "0"
-            , Options.css "background" ("url(" ++ info.post.imgUrl ++ ") center / cover")
+            , Options.css "background" ("url(" ++ info.post.imgUrl ++ ") center / cover") |> Options.when (String.isEmpty info.post.imgUrl |> not)
             , Typo.title
             , Typo.uppercase
             ]
@@ -132,17 +131,13 @@ card info =
 createList : Post -> Html Msg
 createList post =
     Lists.ul []
-        (case post.type_ of
-            Normal ->
+        (case post.subData of
+            Nothing ->
                 List.map normalList post.data
 
-            SubTitle ->
-                List.map2 (,) post.data post.subData
+            Just sub ->
+                List.map2 (,) post.data sub
                     |> List.map subTitleList
-
-            Link ->
-                List.map2 (,) post.data post.subData
-                    |> List.map linkList
         )
 
 
@@ -165,12 +160,4 @@ subTitleList ( title, subTitle ) =
             [ text title
             , Lists.subtitle [] [ text subTitle ]
             ]
-        ]
-
-
-linkList : ( String, String ) -> Html Msg
-linkList ( title, url ) =
-    Lists.li []
-        [ listContent
-            [ a [ href url ] [ text title ] ]
         ]

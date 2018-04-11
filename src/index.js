@@ -3,6 +3,8 @@
 require('./index.html');
 require('./style.css');
 require('./assets/icon2.png');
+require('./assets/link.png');
+require('./assets/work.png');
 
 const elm = require('./Elm/Main.elm');
 

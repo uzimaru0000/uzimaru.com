@@ -1,0 +1,5 @@
+- #### <a target="_blank" href="https://github.com/uzimaru0000">GitHub</a> 
+- #### <a target="_blank" href="https://twitter.com/uzimaru0601">Twitter</a>
+- #### <a target="_blank" href="https://www.facebook.com/shuji.oba.1">Facebook</a>
+- #### <a target="_blank" href="http://uzimaru0601.hatenablog.com/">Blog</a>
+- #### <a target="_blank" href="https://qiita.com/uzimaru0000">Qiita</a>

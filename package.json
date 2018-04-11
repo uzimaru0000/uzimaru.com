@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "webpack-dev-server --hot --port 3000",
-    "build": "webpack"
+    "build": "webpack && git add . && git commit -m 'Update' && git push origin"
   },
   "keywords": [],
   "author": "",

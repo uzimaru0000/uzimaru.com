@@ -1,8 +1,6 @@
 {
     "title" : "works",
-    "data" : ["Hoge", "Foo", "etc..."],
-    "subData" : [],
-    "type" : 0,
+    "data" : ["Comeing soon..."],
     "contentUrl" : "post/works.md",
-    "imgUrl" : ""
+    "imgUrl" : "assets/work.png"
 }

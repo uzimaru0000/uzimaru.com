@@ -1,6 +1,6 @@
 module Model exposing (..)
 
-import Content exposing (ContentType, Post)
+import Content exposing (Post)
 import Http
 import Material
 
@@ -31,7 +31,7 @@ type alias Model =
 type Msg
     = NoOp
     | GetHost String
-    | GetPost String (Result Http.Error Post)
+    | GetPost String Int (Result Http.Error Post)
     | GetContent Int (Result Http.Error String)
     | MouseEnter Int
     | MouseLeave Int
