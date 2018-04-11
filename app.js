@@ -80,8 +80,10 @@ module.exports = __webpack_require__(1);
 __webpack_require__(2);
 __webpack_require__(3);
 __webpack_require__(4);
+__webpack_require__(5);
+__webpack_require__(6);
 
-const elm = __webpack_require__(5);
+const elm = __webpack_require__(7);
 
 const main = document.getElementById('main');
 const app = elm.Main.embed(main);
@@ -112,6 +114,18 @@ module.exports = __webpack_require__.p + "assets/icon2.png";
 
 /***/ }),
 /* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__.p + "assets/link.png";
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__.p + "assets/work.png";
+
+/***/ }),
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global) {var __WEBPACK_AMD_DEFINE_RESULT__;var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
@@ -16534,27 +16548,10 @@ var _evancz$elm_markdown$Markdown$Options = F4(
 		return {githubFlavored: a, defaultHighlighting: b, sanitize: c, smartypants: d};
 	});
 
-var _user$project$Content$Post = F6(
-	function (a, b, c, d, e, f) {
-		return {title: a, data: b, subData: c, type_: d, contentUrl: e, imgUrl: f};
+var _user$project$Content$Post = F5(
+	function (a, b, c, d, e) {
+		return {title: a, data: b, subData: c, contentUrl: d, imgUrl: e};
 	});
-var _user$project$Content$Link = {ctor: 'Link'};
-var _user$project$Content$SubTitle = {ctor: 'SubTitle'};
-var _user$project$Content$Normal = {ctor: 'Normal'};
-var _user$project$Content$convertType = function (n) {
-	var _p0 = n;
-	switch (_p0) {
-		case 0:
-			return _user$project$Content$Normal;
-		case 1:
-			return _user$project$Content$SubTitle;
-		case 2:
-			return _user$project$Content$Link;
-		default:
-			return _user$project$Content$Normal;
-	}
-};
-var _user$project$Content$typeDecoder = A2(_elm_lang$core$Json_Decode$map, _user$project$Content$convertType, _elm_lang$core$Json_Decode$int);
 var _user$project$Content$postDecoder = A3(
 	_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
 	'imgUrl',
@@ -16563,23 +16560,22 @@ var _user$project$Content$postDecoder = A3(
 		_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
 		'contentUrl',
 		_elm_lang$core$Json_Decode$string,
-		A3(
-			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-			'type',
-			_user$project$Content$typeDecoder,
+		A2(
+			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$custom,
+			_elm_lang$core$Json_Decode$maybe(
+				A2(
+					_elm_lang$core$Json_Decode$field,
+					'subData',
+					_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
 			A3(
 				_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-				'subData',
+				'data',
 				_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string),
 				A3(
 					_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-					'data',
-					_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string),
-					A3(
-						_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
-						'title',
-						_elm_lang$core$Json_Decode$string,
-						_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_user$project$Content$Post)))))));
+					'title',
+					_elm_lang$core$Json_Decode$string,
+					_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_user$project$Content$Post))))));
 
 var _user$project$Port$requestUrl = _elm_lang$core$Native_Platform.outgoingPort(
 	'requestUrl',
@@ -16612,9 +16608,9 @@ var _user$project$Model$GetContent = F2(
 	function (a, b) {
 		return {ctor: 'GetContent', _0: a, _1: b};
 	});
-var _user$project$Model$GetPost = F2(
-	function (a, b) {
-		return {ctor: 'GetPost', _0: a, _1: b};
+var _user$project$Model$GetPost = F3(
+	function (a, b, c) {
+		return {ctor: 'GetPost', _0: a, _1: b, _2: c};
 	});
 var _user$project$Model$GetHost = function (a) {
 	return {ctor: 'GetHost', _0: a};
@@ -16648,10 +16644,11 @@ var _user$project$Update$getContent = F2(
 			_elm_lang$http$Http$getString(url));
 	});
 var _user$project$Update$getPost = F2(
-	function (host, url) {
+	function (host, _p0) {
+		var _p1 = _p0;
 		return A2(
 			_elm_lang$http$Http$send,
-			_user$project$Model$GetPost(host),
+			A2(_user$project$Model$GetPost, host, _p1._0),
 			A2(
 				_elm_lang$http$Http$get,
 				A2(
@@ -16662,7 +16659,7 @@ var _user$project$Update$getPost = F2(
 						_0: host,
 						_1: {
 							ctor: '::',
-							_0: url,
+							_0: _p1._1,
 							_1: {ctor: '[]'}
 						}
 					}),
@@ -16670,10 +16667,10 @@ var _user$project$Update$getPost = F2(
 	});
 var _user$project$Update$update = F2(
 	function (msg, model) {
-		var _p0 = msg;
-		_v0_7:
+		var _p2 = msg;
+		_v1_8:
 		do {
-			switch (_p0.ctor) {
+			switch (_p2.ctor) {
 				case 'GetHost':
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
@@ -16683,43 +16680,24 @@ var _user$project$Update$update = F2(
 							_0: _elm_lang$core$Platform_Cmd$batch(
 								A2(
 									_elm_lang$core$List$map,
-									_user$project$Update$getPost(_p0._0),
-									_user$project$Update$postUrl)),
+									_user$project$Update$getPost(_p2._0),
+									A2(
+										_elm_lang$core$List$indexedMap,
+										F2(
+											function (v0, v1) {
+												return {ctor: '_Tuple2', _0: v0, _1: v1};
+											}),
+										_user$project$Update$postUrl))),
 							_1: {ctor: '[]'}
 						});
-				case 'GetPost':
-					if (_p0._1.ctor === 'Ok') {
-						var _p1 = _p0._1._0;
-						var id = _elm_lang$core$List$length(model.contents);
-						var cardInfo = {id: id, post: _p1, content: '', isActive: false};
-						var contents = {ctor: '::', _0: cardInfo, _1: model.contents};
-						return A2(
-							_elm_lang$core$Platform_Cmd_ops['!'],
-							_elm_lang$core$Native_Utils.update(
-								model,
-								{contents: contents}),
-							{
-								ctor: '::',
-								_0: A2(
-									_user$project$Update$getContent,
-									id,
-									A2(
-										_elm_lang$core$Basics_ops['++'],
-										_p0._0,
-										A2(_elm_lang$core$Basics_ops['++'], '/', _p1.contentUrl))),
-								_1: {ctor: '[]'}
-							});
-					} else {
-						break _v0_7;
-					}
 				case 'GetContent':
-					if (_p0._1.ctor === 'Ok') {
+					if (_p2._1.ctor === 'Ok') {
 						var newContents = A2(
 							_elm_lang$core$List$map,
 							function (x) {
-								return _elm_lang$core$Native_Utils.eq(x.id, _p0._0) ? _elm_lang$core$Native_Utils.update(
+								return _elm_lang$core$Native_Utils.eq(x.id, _p2._0) ? _elm_lang$core$Native_Utils.update(
 									x,
-									{content: _p0._1._0}) : x;
+									{content: _p2._1._0}) : x;
 							},
 							model.contents);
 						return A2(
@@ -16729,7 +16707,41 @@ var _user$project$Update$update = F2(
 								{contents: newContents}),
 							{ctor: '[]'});
 					} else {
-						break _v0_7;
+						break _v1_8;
+					}
+				case 'GetPost':
+					if (_p2._2.ctor === 'Ok') {
+						var _p4 = _p2._2._0;
+						var _p3 = _p2._1;
+						var cardInfo = {id: _p3, post: _p4, content: '', isActive: false};
+						var contents = A2(
+							_elm_lang$core$List$sortBy,
+							function (_) {
+								return _.id;
+							},
+							{ctor: '::', _0: cardInfo, _1: model.contents});
+						return A2(
+							_elm_lang$core$Platform_Cmd_ops['!'],
+							_elm_lang$core$Native_Utils.update(
+								model,
+								{contents: contents}),
+							{
+								ctor: '::',
+								_0: A2(
+									_user$project$Update$getContent,
+									_p3,
+									A2(
+										_elm_lang$core$Basics_ops['++'],
+										_p2._0,
+										A2(_elm_lang$core$Basics_ops['++'], '/', _p4.contentUrl))),
+								_1: {ctor: '[]'}
+							});
+					} else {
+						var a = A2(_elm_lang$core$Debug$log, 'error', _p2._2._0);
+						return A2(
+							_elm_lang$core$Platform_Cmd_ops['!'],
+							model,
+							{ctor: '[]'});
 					}
 				case 'MouseEnter':
 					return A2(
@@ -16739,7 +16751,7 @@ var _user$project$Update$update = F2(
 							{
 								contents: A2(
 									_elm_lang$core$List$map,
-									A2(_user$project$Update$changeCardState, _p0._0, true),
+									A2(_user$project$Update$changeCardState, _p2._0, true),
 									model.contents)
 							}),
 						{ctor: '[]'});
@@ -16751,7 +16763,7 @@ var _user$project$Update$update = F2(
 							{
 								contents: A2(
 									_elm_lang$core$List$map,
-									A2(_user$project$Update$changeCardState, _p0._0, false),
+									A2(_user$project$Update$changeCardState, _p2._0, false),
 									model.contents)
 							}),
 						{ctor: '[]'});
@@ -16760,12 +16772,12 @@ var _user$project$Update$update = F2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{focusCard: _p0._0, firstModal: true}),
+							{focusCard: _p2._0, firstModal: true}),
 						{ctor: '[]'});
 				case 'Mdl':
-					return A3(_debois$elm_mdl$Material$update, _user$project$Model$Mdl, _p0._0, model);
+					return A3(_debois$elm_mdl$Material$update, _user$project$Model$Mdl, _p2._0, model);
 				default:
-					break _v0_7;
+					break _v1_8;
 			}
 		} while(false);
 		return A2(
@@ -16836,66 +16848,26 @@ var _user$project$View$subTitleList = function (_p0) {
 			_1: {ctor: '[]'}
 		});
 };
-var _user$project$View$linkList = function (_p2) {
-	var _p3 = _p2;
-	return A2(
-		_debois$elm_mdl$Material_List$li,
-		{ctor: '[]'},
-		{
-			ctor: '::',
-			_0: _user$project$View$listContent(
-				{
-					ctor: '::',
-					_0: A2(
-						_elm_lang$html$Html$a,
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html_Attributes$href(_p3._1),
-							_1: {ctor: '[]'}
-						},
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html$text(_p3._0),
-							_1: {ctor: '[]'}
-						}),
-					_1: {ctor: '[]'}
-				}),
-			_1: {ctor: '[]'}
-		});
-};
 var _user$project$View$createList = function (post) {
 	return A2(
 		_debois$elm_mdl$Material_List$ul,
 		{ctor: '[]'},
 		function () {
-			var _p4 = post.type_;
-			switch (_p4.ctor) {
-				case 'Normal':
-					return A2(_elm_lang$core$List$map, _user$project$View$normalList, post.data);
-				case 'SubTitle':
-					return A2(
-						_elm_lang$core$List$map,
-						_user$project$View$subTitleList,
-						A3(
-							_elm_lang$core$List$map2,
-							F2(
-								function (v0, v1) {
-									return {ctor: '_Tuple2', _0: v0, _1: v1};
-								}),
-							post.data,
-							post.subData));
-				default:
-					return A2(
-						_elm_lang$core$List$map,
-						_user$project$View$linkList,
-						A3(
-							_elm_lang$core$List$map2,
-							F2(
-								function (v0, v1) {
-									return {ctor: '_Tuple2', _0: v0, _1: v1};
-								}),
-							post.data,
-							post.subData));
+			var _p2 = post.subData;
+			if (_p2.ctor === 'Nothing') {
+				return A2(_elm_lang$core$List$map, _user$project$View$normalList, post.data);
+			} else {
+				return A2(
+					_elm_lang$core$List$map,
+					_user$project$View$subTitleList,
+					A3(
+						_elm_lang$core$List$map2,
+						F2(
+							function (v0, v1) {
+								return {ctor: '_Tuple2', _0: v0, _1: v1};
+							}),
+						post.data,
+						_p2._0));
 			}
 		}());
 };
@@ -16948,12 +16920,15 @@ var _user$project$View$card = function (info) {
 						_1: {
 							ctor: '::',
 							_0: A2(
-								_debois$elm_mdl$Material_Options$css,
-								'background',
+								_debois$elm_mdl$Material_Options$when,
+								!_elm_lang$core$String$isEmpty(info.post.imgUrl),
 								A2(
-									_elm_lang$core$Basics_ops['++'],
-									'url(',
-									A2(_elm_lang$core$Basics_ops['++'], info.post.imgUrl, ') center / cover'))),
+									_debois$elm_mdl$Material_Options$css,
+									'background',
+									A2(
+										_elm_lang$core$Basics_ops['++'],
+										'url(',
+										A2(_elm_lang$core$Basics_ops['++'], info.post.imgUrl, ') center / cover')))),
 							_1: {
 								ctor: '::',
 								_0: _debois$elm_mdl$Material_Typography$title,
@@ -17038,9 +17013,9 @@ var _user$project$View$dialog = function (model) {
 					}
 				},
 				function () {
-					var _p5 = model.focusCard;
-					if (_p5.ctor === 'Just') {
-						var _p6 = _p5._0;
+					var _p3 = model.focusCard;
+					if (_p3.ctor === 'Just') {
+						var _p4 = _p3._0;
 						return {
 							ctor: '::',
 							_0: A2(
@@ -17073,7 +17048,7 @@ var _user$project$View$dialog = function (model) {
 										},
 										{
 											ctor: '::',
-											_0: _elm_lang$html$Html$text(_p6.post.title),
+											_0: _elm_lang$html$Html$text(_p4.post.title),
 											_1: {ctor: '[]'}
 										}),
 									_1: {ctor: '[]'}
@@ -17137,7 +17112,7 @@ var _user$project$View$dialog = function (model) {
 											_0: A2(
 												_evancz$elm_markdown$Markdown$toHtml,
 												{ctor: '[]'},
-												_p6.content),
+												_p4.content),
 											_1: {ctor: '[]'}
 										}),
 									_1: {ctor: '[]'}
@@ -17188,8 +17163,8 @@ var _user$project$View$mainContent = function (model) {
 var _user$project$View$view = function (model) {
 	return A3(
 		_debois$elm_mdl$Material_Scheme$topWithScheme,
-		_debois$elm_mdl$Material_Color$LightBlue,
-		_debois$elm_mdl$Material_Color$Cyan,
+		_debois$elm_mdl$Material_Color$Green,
+		_debois$elm_mdl$Material_Color$Indigo,
 		A2(
 			_debois$elm_mdl$Material_Options$div,
 			{ctor: '[]'},
@@ -17667,10 +17642,10 @@ for (var publicModule in Elm)
 }).call(this);
 
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(8)))
 
 /***/ }),
-/* 6 */
+/* 8 */
 /***/ (function(module, exports) {
 
 var g;
