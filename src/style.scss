@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css?family=Press+Start+2P');
+
+$text-color: #88ff63;
+$link-color: #ffbb38;
+
+body {
+    margin: 0;
+    padding: 0;
+    background: #282828;
+    color: $text-color;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 16px;
+}
+
+.prompt {
+    outline: 0;
+    caret-color: $text-color;
+    background: transparent;
+    border: 0px;
+    color: $text-color;
+    width: 90%;
+}
+
+.command {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 16px;
+}
+
+ul.list li {
+    display: flex;
+
+    *:first-child {
+        flex-basis: 20%;
+    }
+}
+
+.whoami {
+    display: flex;
+
+    figure {
+        width: 160px;
+        height: 160px;
+
+        img {
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    ul {
+        display: flex;
+        flex: 1;
+        padding: 0;
+        flex-direction: column;
+        justify-content: space-around;
+    }
+}
+
+.work {
+    a {
+        text-decoration: none;
+        color: $link-color;
+    }
+}

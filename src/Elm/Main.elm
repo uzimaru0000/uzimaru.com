@@ -1,19 +1,22 @@
-module Main exposing (..)
+module Main exposing (main)
 
-import Html exposing (Html, program, text, div, header)
-import Port exposing (..)
-import Update exposing (..)
+import Browser exposing (..)
+import Browser.Events exposing (..)
 import Model exposing (..)
+import Time exposing (..)
+import Update exposing (..)
 import View exposing (..)
-import Material
+
+
 
 -- main
 
-main : Program Never Model Msg
+
+main : Program () Model Msg
 main =
-    program
-        { init = ( Model [] Nothing False Material.model, requestUrl () )
+    Browser.element
+        { init = init
         , view = view
         , update = update
-        , subscriptions = \_ -> getUrl GetHost
+        , subscriptions = always Sub.none
         }
