@@ -1,7 +1,0 @@
-{
-    "title" : "works",
-    "data" : ["Weather-App", "GitHub-Icon-Generator", "Sticky", "etc..."],
-    "subData" : ["Elm製のお天気Webアプリ", "GitHub風のアイコンを生成するWebアプリ", "Markdown記法が使える付箋アプリ", ""],
-    "contentUrl" : "post/works.md",
-    "imgUrl" : "assets/work.png"
-}
