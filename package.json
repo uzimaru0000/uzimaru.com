@@ -6,7 +6,7 @@
   "scripts": {
     "test": "elm-test",
     "start": "webpack-dev-server --hot --port 3000 --mode development",
-    "build": "webpack --mode development"
+    "build": "webpack --mode production"
   },
   "keywords": [],
   "author": "",
