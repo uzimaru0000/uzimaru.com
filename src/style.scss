@@ -2,23 +2,70 @@
 
 $text-color: #88ff63;
 $link-color: #ffbb38;
+$header-height: 24px;
+$button-margin: 10px;
+
+html {
+    height: 100%;
+}
 
 body {
     margin: 0;
     padding: 0;
-    background: #282828;
+    background: rgb(200, 200, 200);
     color: $text-color;
     font-family: 'Press Start 2P', cursive;
     font-size: 16px;
+    height: 100%;
 }
 
-.prompt {
-    outline: 0;
-    caret-color: $text-color;
-    background: transparent;
-    border: 0px;
-    color: $text-color;
-    width: 90%;
+#wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+#tarminal {
+    position: relative;
+    padding: 16px;
+    background: #282828;
+    width: 80%;
+    height: 640px;
+    box-shadow: 0 0px 5px 0px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
+    overflow: scroll;
+}
+
+#header {
+    width: 80%;
+    height: $header-height;
+    background: rgb(87, 87, 87);
+    z-index: 100;
+
+    span {
+        display: inline-block;
+        width: calc(#{$header-height} - #{$button-margin});
+        height: calc(#{$header-height} - #{$button-margin});
+        margin: calc(#{$button-margin} / 2);
+        border-radius: 50%;
+    }
+
+    span:nth-child(1) {
+        background: rgb(255, 84, 84);
+    }
+    span:nth-child(2) {
+        background: rgb(255, 192, 84);
+    }
+    span:nth-child(3) {
+        background: rgb(175, 255, 84);
+    }
+}
+
+pre {
+    display: inline;
+    font-family: 'Press Start 2P', cursive;
 }
 
 .command {
@@ -56,9 +103,7 @@ ul.list li {
     }
 }
 
-.work {
-    a {
-        text-decoration: none;
-        color: $link-color;
-    }
+a {
+    text-decoration: none;
+    color: $link-color;
 }

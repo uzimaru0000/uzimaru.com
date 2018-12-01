@@ -4,13 +4,16 @@ module Model exposing (Commands(..), Model, Msg(..), commandToString, init)
 type alias Model =
     { input : String
     , history : List Commands
+    , caret : Bool
     }
 
 
 type Msg
     = NoOp
+    | Tick
     | OnInput String
     | OnEnter
+    | Delete
     | Clear
 
 
@@ -26,6 +29,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { input = ""
       , history = [ Help ]
+      , caret = True
       }
     , Cmd.none
     )

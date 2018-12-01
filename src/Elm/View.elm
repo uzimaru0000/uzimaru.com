@@ -14,42 +14,44 @@ import Model exposing (..)
 
 view : Model -> Html Msg
 view model =
-    div
-        [ Attr.id "tarminal" ]
-        [ model.history
-            |> List.map historyView
-            |> div []
-        , prompt model.input
+    div [ Attr.id "wrapper" ]
+        [ header
+        , div
+            [ Attr.id "tarminal" ]
+            [ model.history
+                |> List.map historyView
+                |> div []
+            , prompt model.caret model.input
+            ]
         ]
 
 
-prompt : String -> Html Msg
-prompt val =
+header : Html Msg
+header =
+    div
+        [ Attr.id "header" ]
+        [ span [] []
+        , span [] []
+        , span [] []
+        ]
+
+
+prompt : Bool -> String -> Html Msg
+prompt caret val =
     div []
-        [ span [] [ text ">> " ]
-        , input
-            [ Attr.class "prompt command"
-            , Ev.onInput OnInput
-            , onKeyDownWithCtrl
-                (\ctrl code ->
-                    case code of
-                        13 ->
-                            JD.succeed OnEnter
-
-                        76 ->
-                            if ctrl then
-                                JD.succeed Clear
-
-                            else
-                                JD.fail "not ctrl"
-
-                        _ ->
-                            JD.fail "not match key"
-                )
-            , Attr.value val
-            , Attr.autofocus True
+        [ span [] [ text "$ " ]
+        , pre []
+            [ val
+                |> text
             ]
-            []
+        , span []
+            [ text <|
+                if caret then
+                    "|"
+
+                else
+                    ""
+            ]
         ]
 
 
@@ -65,7 +67,7 @@ onKeyDownWithCtrl decoder =
 historyView : Commands -> Html Msg
 historyView cmd =
     div []
-        [ span [] [ text ">> " ]
+        [ span [] [ text "$ " ]
         , span [ Attr.class "command" ] [ text <| commandToString cmd ]
         , outputView cmd
         ]
@@ -76,8 +78,23 @@ outputView cmd =
     case cmd of
         None str ->
             div []
-                [ span []
-                    [ text <| "Unknown command " ++ String.pad (String.length str + 2) '"' str
+                [ span
+                    [ Attr.class "glitch"
+                    , Attr.attribute "text-node" <|
+                        if String.isEmpty str then
+                            ""
+
+                        else
+                            "Unknown command "
+                                ++ String.pad (String.length str + 2) '"' str
+                    ]
+                    [ text <|
+                        if String.isEmpty str then
+                            ""
+
+                        else
+                            "Unknown command "
+                                ++ String.pad (String.length str + 2) '"' str
                     ]
                 ]
 
@@ -110,7 +127,7 @@ help =
                 ([ Help, WhoAmI, Work, Link ]
                     |> List.map commandToString
                 )
-                [ "Help about this size."
+                [ "Help about this site."
                 , "Who is Uzimaru?"
                 , "List works which were made by Uzimaru."
                 , "List links which to Uzimaru."
@@ -166,5 +183,22 @@ work =
 
 links : Html Msg
 links =
+    let
+        info =
+            [ ( "GitHub", "https://github.com/uzimaru000" )
+            , ( "Twitter", "https://twitter.com/uzimaru0601" )
+            , ( "Facebook", "https://www.facebook.com/shuji.oba.1" )
+            , ( "Qiita", "https://qiita.com/uzimaru0000" )
+            , ( "Blog", "http://uzimaru0601.hatenablog.com" )
+            ]
+    in
     div [ Attr.class "links" ]
-        []
+        [ info
+            |> List.map
+                (\( title, url ) ->
+                    li []
+                        [ a [ Attr.href url, Attr.target "_blink" ] [ text title ]
+                        ]
+                )
+            |> ul [ Attr.class "list" ]
+        ]

@@ -1,6 +1,8 @@
 module Update exposing (update)
 
+import Browser.Dom
 import Model exposing (..)
+import Task
 
 
 
@@ -12,26 +14,31 @@ update msg model =
     case msg of
         OnInput str ->
             ( { model
-                | input = str
+                | input = model.input ++ str
               }
             , Cmd.none
             )
 
         OnEnter ->
             ( { model
-                | history =
-                    if String.isEmpty model.input |> not then
-                        model.history ++ [ parseCommand model.input ]
-
-                    else
-                        model.history
+                | history = model.history ++ [ parseCommand model.input ]
                 , input = ""
               }
-            , Cmd.none
+            , tarminalJumpToBotton "tarminal"
             )
 
         Clear ->
             ( { model | history = [], input = "" }
+            , Cmd.none
+            )
+
+        Tick ->
+            ( { model | caret = not model.caret }
+            , Cmd.none
+            )
+
+        Delete ->
+            ( { model | input = model.input |> String.dropRight 1 }
             , Cmd.none
             )
 
@@ -56,3 +63,10 @@ parseCommand cmd =
 
         _ ->
             None cmd
+
+
+tarminalJumpToBotton : String -> Cmd Msg
+tarminalJumpToBotton id =
+    Browser.Dom.getViewportOf id
+        |> Task.andThen (\info -> Browser.Dom.setViewportOf id 0 info.scene.height)
+        |> Task.attempt (\_ -> NoOp)
