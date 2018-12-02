@@ -27,6 +27,14 @@ update msg model =
             , tarminalJumpToBotton "tarminal"
             )
 
+        OnCommand cmd ->
+            ( { model
+                | history = model.history ++ [ cmd ]
+                , input = ""
+              }
+            , tarminalJumpToBotton "tarminal"
+            )
+
         Clear ->
             ( { model | history = [], input = "" }
             , Cmd.none

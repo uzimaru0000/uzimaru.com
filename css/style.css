@@ -13,13 +13,14 @@ body {
 
 #wrapper {
   display: flex;
+  position: relative;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100%; }
+  height: 100%;
+  animation: show 1s ease; }
 
 #tarminal {
-  position: relative;
   padding: 16px;
   background: #282828;
   width: 80%;
@@ -32,7 +33,8 @@ body {
   width: 80%;
   height: 24px;
   background: #575757;
-  z-index: 100; }
+  z-index: 100;
+  box-shadow: 0 0 5px 0px rgba(0, 0, 0, 0.5); }
   #header span {
     display: inline-block;
     width: calc(24px - 10px);
@@ -55,15 +57,16 @@ pre {
   font-size: 16px; }
 
 ul.list li {
-  display: flex; }
+  display: flex;
+  padding: 2px; }
   ul.list li *:first-child {
     flex-basis: 20%; }
 
 .whoami {
   display: flex; }
   .whoami figure {
-    width: 160px;
-    height: 160px; }
+    max-width: 160px;
+    max-height: 160px; }
     .whoami figure img {
       width: 100%;
       height: 100%; }
@@ -76,5 +79,34 @@ ul.list li {
 
 a {
   text-decoration: none;
-  color: #ffbb38; }
+  color: #ffbb38;
+  cursor: pointer; }
+
+a:hover {
+  text-decoration: underline; }
+
+@keyframes show {
+  from {
+    opacity: 0; }
+  to {
+    opacity: 1; } }
+
+@media (max-width: 1020px) {
+  #tarminal {
+    width: 100%;
+    height: 100%; }
+  #header {
+    width: 100%; } }
+
+@media (max-width: 767px) {
+  ul.list li {
+    flex-direction: column;
+    margin: 1px; }
+    ul.list li *:first-child:before {
+      content: "- "; }
+  .whoami {
+    flex-direction: column; }
+    .whoami figure {
+      margin-left: auto;
+      margin-right: auto; } }
 

@@ -13,6 +13,7 @@ type Msg
     | Tick
     | OnInput String
     | OnEnter
+    | OnCommand Commands
     | Delete
     | Clear
 

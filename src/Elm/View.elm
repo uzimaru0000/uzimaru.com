@@ -124,18 +124,22 @@ help =
     let
         info =
             List.map2 Tuple.pair
-                ([ Help, WhoAmI, Work, Link ]
-                    |> List.map commandToString
-                )
+                [ Help, WhoAmI, Work, Link ]
                 [ "Help about this site."
-                , "Who is Uzimaru?"
-                , "List works which were made by Uzimaru."
-                , "List links which to Uzimaru."
+                , "Who is me?"
+                , "List works which were made by me."
+                , "List links which to me."
                 ]
     in
     div [ Attr.class "help" ]
         [ info
-            |> List.map createList
+            |> List.map
+                (\( cmd, b ) ->
+                    li []
+                        [ a [ Ev.onClick <| OnCommand cmd ] [ text <| commandToString cmd ]
+                        , span [] [ text b ]
+                        ]
+                )
             |> ul [ Attr.class "list" ]
         ]
 
@@ -147,7 +151,7 @@ whoami =
             [ ( "Name", "Shuji Oba (uzimaru)" )
             , ( "Age", "20" )
             , ( "Hobby", "Cooking, Programming" )
-            , ( "Lines", "Unity, Elm, Golang" )
+            , ( "Likes", "Unity, Elm, Golang" )
             ]
     in
     div [ Attr.class "whoami" ]
@@ -185,7 +189,7 @@ links : Html Msg
 links =
     let
         info =
-            [ ( "GitHub", "https://github.com/uzimaru000" )
+            [ ( "GitHub", "https://github.com/uzimaru0000" )
             , ( "Twitter", "https://twitter.com/uzimaru0601" )
             , ( "Facebook", "https://www.facebook.com/shuji.oba.1" )
             , ( "Qiita", "https://qiita.com/uzimaru0000" )

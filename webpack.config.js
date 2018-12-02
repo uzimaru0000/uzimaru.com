@@ -7,7 +7,7 @@ module.exports = (env, argv) => {
         entry: {
             app: './src/index.js'
         }, output: {
-            path: `${__dirname}/dist`,
+            path: `${__dirname}`,
             filename: '[name].js'
         },
         module: {
@@ -39,7 +39,7 @@ module.exports = (env, argv) => {
                         {
                             loader: 'elm-webpack-loader',
                             options: {
-                                debug: argv.mode === 'dedevelopment'
+                                debug: argv.mode === 'development'
                             }
                         }
                     ]
