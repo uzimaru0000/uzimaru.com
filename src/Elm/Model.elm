@@ -1,5 +1,8 @@
 module Model exposing (Commands(..), Model, Msg(..), commandToString, init)
 
+import Browser.Dom
+import Task
+
 
 type alias Model =
     { input : String
@@ -14,7 +17,7 @@ type Msg
     | OnInput String
     | OnEnter
     | OnCommand Commands
-    | Delete
+    | Focus
     | Clear
 
 
@@ -32,7 +35,7 @@ init _ =
       , history = [ Help ]
       , caret = True
       }
-    , Cmd.none
+    , Task.attempt (\_ -> NoOp) <| Browser.Dom.focus "prompt"
     )
 
 

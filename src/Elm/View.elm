@@ -40,10 +40,25 @@ prompt : Bool -> String -> Html Msg
 prompt caret val =
     div []
         [ span [] [ text "$ " ]
-        , pre []
-            [ val
-                |> text
+        , input
+            [ Attr.id "prompt"
+            , Ev.onInput OnInput
+            , Attr.value val
+            , onKeyDownWithCtrl
+                (\ctrl code ->
+                    case ( ctrl, code ) of
+                        ( True, 76 ) ->
+                            JD.succeed Clear
+
+                        (_, 13) ->
+                            JD.succeed OnEnter
+
+                        _ ->
+                            JD.fail "not matching"
+                )
             ]
+            []
+        , pre [] [ text val ]
         , span []
             [ text <|
                 if caret then
@@ -79,8 +94,7 @@ outputView cmd =
         None str ->
             div []
                 [ span
-                    [ Attr.class "glitch"
-                    , Attr.attribute "text-node" <|
+                    [ Attr.attribute "text-node" <|
                         if String.isEmpty str then
                             ""
 

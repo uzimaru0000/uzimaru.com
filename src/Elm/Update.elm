@@ -14,7 +14,7 @@ update msg model =
     case msg of
         OnInput str ->
             ( { model
-                | input = model.input ++ str
+                | input = str
               }
             , Cmd.none
             )
@@ -45,9 +45,9 @@ update msg model =
             , Cmd.none
             )
 
-        Delete ->
-            ( { model | input = model.input |> String.dropRight 1 }
-            , Cmd.none
+        Focus ->
+            ( model
+            , Task.attempt (\_ -> NoOp) <| Browser.Dom.focus "prompt"
             )
 
         _ ->

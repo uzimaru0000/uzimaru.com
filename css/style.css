@@ -48,6 +48,10 @@ body {
   #header span:nth-child(3) {
     background: #afff54; }
 
+#prompt {
+  opacity: 0;
+  position: absolute; }
+
 pre {
   display: inline;
   font-family: 'Press Start 2P', cursive; }
