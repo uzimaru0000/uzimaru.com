@@ -101,3 +101,4 @@ typings/
 .dynamodb/
 
 # End of https://www.gitignore.io/api/elm,node,firebase,atom
+dist/

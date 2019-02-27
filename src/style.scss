@@ -1,164 +1,168 @@
-@import url('https://fonts.googleapis.com/css?family=Press+Start+2P');
+@import url("https://fonts.googleapis.com/css?family=Press+Start+2P");
 
 $text-color: #88ff63;
 $link-color: #ffbb38;
 $header-height: 24px;
 $button-margin: 10px;
+$terminal-max-width: 980px;
 
 html {
-    height: 100%;
+  height: 100%;
 }
 
 body {
-    margin: 0;
-    padding: 0;
-    background: rgb(200, 200, 200);
-    color: $text-color;
-    font-family: 'Press Start 2P', cursive;
-    font-size: 16px;
-    height: 100%;
+  margin: 0;
+  padding: 0;
+  background: rgb(200, 200, 200);
+  color: $text-color;
+  font-family: "Press Start 2P", cursive;
+  font-size: 16px;
 }
 
 #wrapper {
-    display: flex;
-    position: relative;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    animation: show 1s ease;
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  animation: show 1s ease;
 }
 
 #tarminal {
-    padding: 16px;
-    background: #282828;
-    width: 80%;
-    height: 640px;
-    box-shadow: 0 0px 5px 0px rgba(0, 0, 0, 0.5);
-    box-sizing: border-box;
-    overflow: scroll;
+  padding: 16px;
+  background: #282828;
+  width: 80%;
+  max-width: $terminal-max-width;
+  height: 640px;
+  box-shadow: 0 0px 5px 0px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+  overflow: scroll;
 }
 
 #header {
-    width: 80%;
-    height: $header-height;
-    background: rgb(87, 87, 87);
-    z-index: 100;
-    box-shadow: 0 0 5px 0px rgba(0, 0, 0, 0.5);
+  width: 80%;
+  max-width: $terminal-max-width;
+  height: $header-height;
+  background: rgb(87, 87, 87);
+  z-index: 100;
+  box-shadow: 0 0 5px 0px rgba(0, 0, 0, 0.5);
 
-    span {
-        display: inline-block;
-        width: calc(#{$header-height} - #{$button-margin});
-        height: calc(#{$header-height} - #{$button-margin});
-        margin: calc(#{$button-margin} / 2);
-        border-radius: 50%;
-    }
+  span {
+    display: inline-block;
+    width: calc(#{$header-height} - #{$button-margin});
+    height: calc(#{$header-height} - #{$button-margin});
+    margin: calc(#{$button-margin} / 2);
+    border-radius: 50%;
+  }
 
-    span:nth-child(1) {
-        background: rgb(255, 84, 84);
-    }
-    span:nth-child(2) {
-        background: rgb(255, 192, 84);
-    }
-    span:nth-child(3) {
-        background: rgb(175, 255, 84);
-    }
+  span:nth-child(1) {
+    background: rgb(255, 84, 84);
+  }
+  span:nth-child(2) {
+    background: rgb(255, 192, 84);
+  }
+  span:nth-child(3) {
+    background: rgb(175, 255, 84);
+  }
 }
 
 #prompt {
-    opacity: 0;
-    position: absolute;
+  opacity: 0;
+  position: absolute;
 }
 
 pre {
-    display: inline;
-    font-family: 'Press Start 2P', cursive;
+  display: inline;
+  font-family: "Press Start 2P", cursive;
 }
 
 .command {
-    font-family: 'Press Start 2P', cursive;
-    font-size: 16px;
+  font-family: "Press Start 2P", cursive;
+  font-size: 16px;
 }
 
 ul.list li {
-    display: flex;
-    padding: 2px;
+  display: flex;
+  padding: 2px;
 
-    *:first-child {
-        flex-basis: 20%;
-    }
+  *:first-child {
+    flex-basis: 20%;
+  }
 }
 
 .whoami {
+  display: flex;
+
+  figure {
+    width: 160px;
+    height: 160px;
+
+    div {
+      background-image: url("./assets/icon2.png");
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+    }
+  }
+
+  ul {
     display: flex;
-
-    figure {
-        max-width: 160px;
-        max-height: 160px;
-
-        img {
-            width: 100%;
-            height: 100%;
-        }
-    }
-
-    ul {
-        display: flex;
-        flex: 1;
-        padding: 0;
-        flex-direction: column;
-        justify-content: space-around;
-    }
+    flex: 1;
+    padding: 0;
+    flex-direction: column;
+    justify-content: space-around;
+  }
 }
 
 a {
-    text-decoration: none;
-    color: $link-color;
-    cursor: pointer;
+  text-decoration: none;
+  color: $link-color;
+  cursor: pointer;
 }
 
 a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 @keyframes show {
-    from {
-        opacity: 0;
-    }
+  from {
+    opacity: 0;
+  }
 
-    to {
-        opacity: 1;
-    }
+  to {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 1020px) {
-    #tarminal {
-        width: 100%;
-        height: 100%;
-    }
+  #tarminal {
+    width: 100%;
+    height: 100%;
+  }
 
-    #header {
-        width: 100%;
-    }
+  #header {
+    width: 100%;
+  }
 }
 
 @media (max-width: 767px) {
-    ul.list {
-        li {
-            flex-direction: column;
-            margin: 1px;
+  ul.list {
+    li {
+      flex-direction: column;
+      margin: 1px;
 
-            *:first-child:before {
-                content: "- ";
-            }
-        }
+      *:first-child:before {
+        content: "- ";
+      }
     }
+  }
 
-    .whoami {
-        flex-direction: column;
-        figure {
-            margin-left: auto;
-            margin-right: auto;
-        }
+  .whoami {
+    flex-direction: column;
+    figure {
+      margin-left: auto;
+      margin-right: auto;
     }
+  }
 }

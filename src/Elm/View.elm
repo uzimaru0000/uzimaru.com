@@ -8,7 +8,6 @@ import Json.Decode as JD
 import Model exposing (..)
 
 
-
 -- view
 
 
@@ -50,7 +49,7 @@ prompt caret val =
                         ( True, 76 ) ->
                             JD.succeed Clear
 
-                        (_, 13) ->
+                        ( _, 13 ) ->
                             JD.succeed OnEnter
 
                         _ ->
@@ -63,7 +62,6 @@ prompt caret val =
             [ text <|
                 if caret then
                     "|"
-
                 else
                     ""
             ]
@@ -80,32 +78,24 @@ onKeyDownWithCtrl decoder =
 
 
 historyView : Commands -> Html Msg
-historyView cmd =
+historyView ( cmd, args ) =
     div []
         [ span [] [ text "$ " ]
-        , span [ Attr.class "command" ] [ text <| commandToString cmd ]
+        , span [ Attr.class "command" ] [ commandToString cmd :: args |> Debug.toString |> text ]
         , outputView cmd
         ]
 
 
-outputView : Commands -> Html Msg
+outputView : Command -> Html Msg
 outputView cmd =
     case cmd of
         None str ->
             div []
-                [ span
-                    [ Attr.attribute "text-node" <|
-                        if String.isEmpty str then
-                            ""
-
-                        else
-                            "Unknown command "
-                                ++ String.pad (String.length str + 2) '"' str
-                    ]
+                [ pre
+                    []
                     [ text <|
                         if String.isEmpty str then
                             ""
-
                         else
                             "Unknown command "
                                 ++ String.pad (String.length str + 2) '"' str
@@ -123,6 +113,9 @@ outputView cmd =
 
         Link ->
             links
+
+        _ ->
+            text ""
 
 
 createList : ( String, String ) -> Html Msg
@@ -145,17 +138,17 @@ help =
                 , "List links which to me."
                 ]
     in
-    div [ Attr.class "help" ]
-        [ info
-            |> List.map
-                (\( cmd, b ) ->
-                    li []
-                        [ a [ Ev.onClick <| OnCommand cmd ] [ text <| commandToString cmd ]
-                        , span [] [ text b ]
-                        ]
-                )
-            |> ul [ Attr.class "list" ]
-        ]
+        div [ Attr.class "help" ]
+            [ info
+                |> List.map
+                    (\( cmd, b ) ->
+                        li []
+                            [ a [ Ev.onClick <| OnCommand ( cmd, [] ) ] [ text <| commandToString cmd ]
+                            , span [] [ text b ]
+                            ]
+                    )
+                |> ul [ Attr.class "list" ]
+            ]
 
 
 whoami : Html Msg
@@ -168,12 +161,12 @@ whoami =
             , ( "Likes", "Unity, Elm, Golang" )
             ]
     in
-    div [ Attr.class "whoami" ]
-        [ figure [] [ img [ Attr.src "icon2.png" ] [] ]
-        , info
-            |> List.map createList
-            |> ul [ Attr.class "list" ]
-        ]
+        div [ Attr.class "whoami" ]
+            [ figure [] [ div [] [] ]
+            , info
+                |> List.map createList
+                |> ul [ Attr.class "list" ]
+            ]
 
 
 work : Html Msg
@@ -186,17 +179,17 @@ work =
             , ( "VR", "Summary made with VR.", "https://twitter.com/i/moments/912461981851860992" )
             ]
     in
-    div [ Attr.class "work" ]
-        [ info
-            |> List.map
-                (\( title, subTitle, url ) ->
-                    li []
-                        [ a [ Attr.href url, Attr.target "_blink" ] [ text title ]
-                        , span [] [ text subTitle ]
-                        ]
-                )
-            |> ul [ Attr.class "list" ]
-        ]
+        div [ Attr.class "work" ]
+            [ info
+                |> List.map
+                    (\( title, subTitle, url ) ->
+                        li []
+                            [ a [ Attr.href url, Attr.target "_blink" ] [ text title ]
+                            , span [] [ text subTitle ]
+                            ]
+                    )
+                |> ul [ Attr.class "list" ]
+            ]
 
 
 links : Html Msg
@@ -210,13 +203,13 @@ links =
             , ( "Blog", "http://uzimaru0601.hatenablog.com" )
             ]
     in
-    div [ Attr.class "links" ]
-        [ info
-            |> List.map
-                (\( title, url ) ->
-                    li []
-                        [ a [ Attr.href url, Attr.target "_blink" ] [ text title ]
-                        ]
-                )
-            |> ul [ Attr.class "list" ]
-        ]
+        div [ Attr.class "links" ]
+            [ info
+                |> List.map
+                    (\( title, url ) ->
+                        li []
+                            [ a [ Attr.href url, Attr.target "_blink" ] [ text title ]
+                            ]
+                    )
+                |> ul [ Attr.class "list" ]
+            ]

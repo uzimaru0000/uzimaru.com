@@ -3,7 +3,9 @@ module Update exposing (update)
 import Browser.Dom
 import Model exposing (..)
 import Task
-
+import Lazy.Tree.Zipper as Zipper
+import Lazy.Tree as Tree
+import Directory as Dir exposing (Directory(..))
 
 
 -- update
@@ -20,16 +22,23 @@ update msg model =
             )
 
         OnEnter ->
-            ( { model
-                | history = model.history ++ [ parseCommand model.input ]
-                , input = ""
-              }
-            , tarminalJumpToBotton "tarminal"
-            )
+            let
+                cmds =
+                    parseCommand model.input
 
-        OnCommand cmd ->
+                newModel =
+                    executeCommand model cmds
+            in
+                ( { newModel
+                    | input = ""
+                    , history = model.history ++ [ cmds ]
+                  }
+                , tarminalJumpToBotton "tarminal"
+                )
+
+        OnCommand cmds ->
             ( { model
-                | history = model.history ++ [ cmd ]
+                | history = model.history ++ [ cmds ]
                 , input = ""
               }
             , tarminalJumpToBotton "tarminal"
@@ -55,22 +64,64 @@ update msg model =
 
 
 parseCommand : String -> Commands
-parseCommand cmd =
-    case cmd of
-        "whoami" ->
-            WhoAmI
+parseCommand str =
+    case String.split " " str |> List.filter (not << String.isEmpty) of
+        raw :: args ->
+            let
+                cmd =
+                    case raw of
+                        "whoami" ->
+                            WhoAmI
 
-        "work" ->
-            Work
+                        "work" ->
+                            Work
 
-        "link" ->
-            Link
+                        "link" ->
+                            Link
 
-        "help" ->
-            Help
+                        "help" ->
+                            Help
+
+                        "ls" ->
+                            List
+
+                        "mkdir" ->
+                            MakeDir
+
+                        "touch" ->
+                            Touch
+
+                        "cd" ->
+                            ChangeDir
+
+                        _ ->
+                            None str
+            in
+                ( cmd, args )
+
+        [] ->
+            ( None str, [] )
+
+
+executeCommand : Model -> Commands -> Model
+executeCommand model ( cmd, args ) =
+    case ( cmd, args ) of
+        ( MakeDir, name :: _ ) ->
+            { model
+                | directory =
+                    model.directory
+                        |> Zipper.insert (Tree.singleton <| Directory { name = name } [])
+            }
+
+        ( Touch, name :: _ ) ->
+            { model
+                | directory =
+                    model.directory
+                        |> Zipper.insert (Tree.singleton <| File { name = name })
+            }
 
         _ ->
-            None cmd
+            model
 
 
 tarminalJumpToBotton : String -> Cmd Msg

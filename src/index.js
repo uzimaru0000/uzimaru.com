@@ -1,8 +1,6 @@
 'use strict'
 
-require('./index.html');
-require('./style.scss');
-require('./assets/icon2.png');
+import './style.scss';
 
 import {Elm} from './Elm/Main.elm';
 
