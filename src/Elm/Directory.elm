@@ -4,8 +4,8 @@ import Lazy.Tree as Tree exposing (Tree)
 
 
 type Directory
-   = Directory Info (List Directory)
-   | File Info
+    = Directory Info (List Directory)
+    | File Info
 
 
 type alias Info =
@@ -29,8 +29,8 @@ builder =
 getName : Directory -> String
 getName dir =
     case dir of
-        Directory {name} _ ->
+        Directory { name } _ ->
             name
 
-        File {name} ->
+        File { name } ->
             name
