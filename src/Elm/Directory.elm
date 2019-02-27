@@ -1,6 +1,8 @@
 module Directory exposing (..)
 
 import Lazy.Tree as Tree exposing (Tree)
+import Lazy.Tree.Zipper as Zipper exposing (Zipper)
+import Html exposing (..)
 
 
 type Directory
@@ -34,3 +36,18 @@ getName dir =
 
         File { name } ->
             name
+
+
+prompt : Zipper Directory -> Html msg
+prompt dir =
+    span []
+        [ [ "[ "
+          , dir
+                |> Zipper.getPath getName
+                |> String.join "/"
+          , " ]"
+          , " $ "
+          ]
+            |> String.join ""
+            |> text
+        ]

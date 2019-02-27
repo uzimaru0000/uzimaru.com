@@ -2,10 +2,12 @@ module Update exposing (update)
 
 import Browser.Dom
 import Model exposing (..)
+import Html
 import Task
-import Lazy.Tree.Zipper as Zipper
+import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import Lazy.Tree as Tree
 import Directory as Dir exposing (Directory(..))
+import Command as Cmd exposing (Commands, Command(..))
 
 
 -- update
@@ -22,12 +24,18 @@ update msg model =
             )
 
         OnEnter ->
-            let
-                cmds =
-                    parseCommand model.input
+            (parseCommand model.input
+                |> OnCommand
+                |> update
+            )
+                model
 
+        OnCommand cmds ->
+            let
                 newModel =
-                    executeCommand model cmds
+                    model
+                        |> display cmds
+                        |> executeCommand cmds
             in
                 ( { newModel
                     | input = ""
@@ -36,16 +44,8 @@ update msg model =
                 , tarminalJumpToBotton "tarminal"
                 )
 
-        OnCommand cmds ->
-            ( { model
-                | history = model.history ++ [ cmds ]
-                , input = ""
-              }
-            , tarminalJumpToBotton "tarminal"
-            )
-
         Clear ->
-            ( { model | history = [], input = "" }
+            ( { model | history = [], input = "", view = [] }
             , Cmd.none
             )
 
@@ -94,6 +94,9 @@ parseCommand str =
                         "cd" ->
                             ChangeDir
 
+                        "rm" ->
+                            Remove
+
                         _ ->
                             None str
             in
@@ -103,8 +106,8 @@ parseCommand str =
             ( None str, [] )
 
 
-executeCommand : Model -> Commands -> Model
-executeCommand model ( cmd, args ) =
+executeCommand : Commands -> Model -> Model
+executeCommand ( cmd, args ) model =
     case ( cmd, args ) of
         ( MakeDir, name :: _ ) ->
             { model
@@ -120,8 +123,78 @@ executeCommand model ( cmd, args ) =
                         |> Zipper.insert (Tree.singleton <| File { name = name })
             }
 
+        ( ChangeDir, path :: _ ) ->
+            { model
+                | directory =
+                    model.directory
+                        |> Zipper.attempt (Just >> (path |> String.split "/" |> changeDir))
+            }
+
+        ( ChangeDir, [] ) ->
+            { model
+                | directory =
+                    model.directory
+                        |> Zipper.root
+            }
+
+        ( Remove, path :: _ ) ->
+            { model
+                | directory =
+                    model.directory
+                        |> Zipper.attempt (Zipper.open <| Dir.getName >> (==) path)
+                        |> Zipper.attempt Zipper.delete
+            }
+
         _ ->
             model
+
+
+display : Commands -> Model -> Model
+display ( cmd, args ) model =
+    { model
+        | view =
+            model.view
+                ++ [ Html.div []
+                        [ Html.span []
+                            [ Dir.prompt model.directory
+                            , (Cmd.commandToString cmd :: args)
+                                |> String.join " "
+                                |> Html.text
+                            ]
+                        , Cmd.outputView model.directory cmd |> Html.map OnCommand
+                        ]
+                   ]
+    }
+
+
+changeDir : List String -> Maybe (Zipper Directory) -> Maybe (Zipper Directory)
+changeDir pathList maybeDir =
+    case maybeDir of
+        Just dir ->
+            case pathList of
+                ".." :: tail ->
+                    dir
+                        |> Zipper.up
+                        |> changeDir tail
+
+                head :: tail ->
+                    let
+                        moved =
+                            dir
+                                |> Zipper.open (Dir.getName >> (==) head)
+                    in
+                        case Maybe.map Zipper.current moved of
+                            Just (Directory _ _) ->
+                                changeDir tail moved
+
+                            _ ->
+                                Nothing
+
+                [] ->
+                    maybeDir
+
+        Nothing ->
+            Nothing
 
 
 tarminalJumpToBotton : String -> Cmd Msg

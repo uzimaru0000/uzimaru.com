@@ -4,11 +4,7 @@ $text-color: #88ff63;
 $link-color: #ffbb38;
 $header-height: 24px;
 $button-margin: 10px;
-$terminal-max-width: 980px;
-
-html {
-  height: 100%;
-}
+$terminal-max-width: 1000px;
 
 body {
   margin: 0;
@@ -95,14 +91,12 @@ ul.list li {
   display: flex;
 
   figure {
-    width: 160px;
-    height: 160px;
+    max-width: 160px;
+    max-height: 160px;
 
-    div {
-      background-image: url("./assets/icon2.png");
+    img {
       width: 100%;
       height: 100%;
-      background-size: cover;
     }
   }
 
@@ -112,6 +106,27 @@ ul.list li {
     padding: 0;
     flex-direction: column;
     justify-content: space-around;
+  }
+}
+
+.ls {
+  .directory {
+    color: #48f;
+  }
+
+  .file {
+    color: #eee;
+  }
+
+  li {
+    flex-basis: 20%;
+    padding: 2px;
+  }
+
+  ul {
+    display: flex;
+    list-style-type: none;
+    flex-wrap: wrap;
   }
 }
 

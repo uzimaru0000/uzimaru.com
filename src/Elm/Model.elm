@@ -4,11 +4,14 @@ import Browser.Dom
 import Task
 import Directory as Dir exposing (Directory(..))
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
+import Html exposing (Html)
+import Command exposing (..)
 
 
 type alias Model =
     { input : String
     , history : List Commands
+    , view : List (Html Msg)
     , caret : Bool
     , directory : Zipper Directory
     }
@@ -24,34 +27,14 @@ type Msg
     | Clear
 
 
-type Command
-    = None String
-    | Help
-    | WhoAmI
-    | Work
-    | Link
-    | List
-    | MakeDir
-    | Touch
-    | ChangeDir
-    | Remove
-
-
-type alias Args =
-    List String
-
-
-type alias Commands =
-    ( Command, Args )
-
-
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { input = ""
-      , history = [ ( Help, [] ) ]
+      , history = []
+      , view = []
       , caret = True
       , directory =
-            Directory { name = "/" }
+            Directory { name = "~" }
                 [ Directory { name = "dev" }
                     []
                 , Directory { name = "usr" }
@@ -64,39 +47,8 @@ init _ =
                 |> Dir.builder
                 |> Zipper.fromTree
       }
-    , Task.attempt (\_ -> NoOp) <| Browser.Dom.focus "prompt"
+    , [ Task.attempt (\_ -> NoOp) <| Browser.Dom.focus "prompt"
+      , Task.perform identity (Task.succeed <| OnCommand ( Help, [] ))
+      ]
+        |> Cmd.batch
     )
-
-
-commandToString : Command -> String
-commandToString cmd =
-    case cmd of
-        None str ->
-            str
-
-        Help ->
-            "help"
-
-        WhoAmI ->
-            "whoami"
-
-        Work ->
-            "work"
-
-        Link ->
-            "link"
-
-        List ->
-            "ls"
-
-        MakeDir ->
-            "mkdir"
-
-        Touch ->
-            "touch"
-
-        ChangeDir ->
-            "cd"
-
-        Remove ->
-            "rm"
