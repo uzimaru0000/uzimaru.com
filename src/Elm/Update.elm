@@ -1,13 +1,14 @@
 module Update exposing (update)
 
 import Browser.Dom
-import Model exposing (..)
-import Html
-import Task
-import Lazy.Tree.Zipper as Zipper exposing (Zipper)
-import Lazy.Tree as Tree
+import Command as Cmd exposing (Command(..), Commands)
 import Directory as Dir exposing (Directory(..))
-import Command as Cmd exposing (Commands, Command(..))
+import Html
+import Lazy.Tree as Tree
+import Lazy.Tree.Zipper as Zipper exposing (Zipper)
+import LocalStorage as LS
+import Model exposing (..)
+import Task
 
 
 -- update
@@ -41,7 +42,14 @@ update msg model =
                     | input = ""
                     , history = model.history ++ [ cmds ]
                   }
-                , tarminalJumpToBotton "tarminal"
+                , [ tarminalJumpToBotton "tarminal"
+                  , newModel.directory
+                        |> Debug.log ""
+                        |> Zipper.current
+                        |> Dir.encoder
+                        |> LS.store
+                  ]
+                    |> Cmd.batch
                 )
 
         Clear ->
