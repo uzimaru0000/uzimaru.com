@@ -176,7 +176,7 @@ links =
     let
         info =
             [ ( "GitHub", "https://github.com/uzimaru0000" )
-            , ( "Twitter", "https://twitter.com/uzimaru0601" )
+            , ( "Twitter", "https://twitter.com/uzimaru0000" )
             , ( "Facebook", "https://www.facebook.com/shuji.oba.1" )
             , ( "Qiita", "https://qiita.com/uzimaru0000" )
             , ( "Blog", "http://uzimaru0601.hatenablog.com" )
