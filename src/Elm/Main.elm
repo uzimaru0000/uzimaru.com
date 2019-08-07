@@ -27,5 +27,14 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     [ Time.every 500 (always Tick)
     , onClick <| JD.succeed Focus
+    , if model.isClickHeader then
+        JD.map2 Tuple.pair
+            (JD.field "movementX" JD.float)
+            (JD.field "movementY" JD.float)
+            |> JD.map MoveMouse
+            |> onMouseMove
+
+      else
+        Sub.none
     ]
         |> Sub.batch

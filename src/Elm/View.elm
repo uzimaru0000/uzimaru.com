@@ -1,25 +1,37 @@
 module View exposing (view)
 
+import Directory as Dir exposing (Directory(..))
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Ev
 import Json.Decode as JD
-import Model exposing (..)
 import Lazy.Tree.Zipper exposing (Zipper)
-import Directory as Dir exposing (Directory(..))
+import Model exposing (..)
+
 
 
 -- view
 
 
+px : String -> String
+px str =
+    str ++ "px"
+
+
 view : Model -> Html Msg
 view model =
     div [ Attr.id "wrapper" ]
-        [ header
-        , div
-            [ Attr.id "tarminal" ]
-            [ div [] model.view
-            , stdin model.caret model.input model.directory
+        [ div
+            [ Attr.id "window"
+            , Attr.style "left" <| (px << String.fromFloat << Tuple.first) model.windowPos
+            , Attr.style "top" <| (px << String.fromFloat << Tuple.second) model.windowPos
+            ]
+            [ header
+            , div
+                [ Attr.id "tarminal" ]
+                [ div [] model.view
+                , stdin model.caret model.input model.directory
+                ]
             ]
         ]
 
@@ -27,7 +39,10 @@ view model =
 header : Html Msg
 header =
     div
-        [ Attr.id "header" ]
+        [ Attr.id "header"
+        , Ev.onMouseDown <| ClickHeader True
+        , Ev.onMouseUp <| ClickHeader False
+        ]
         [ span [] []
         , span [] []
         , span [] []
@@ -61,6 +76,7 @@ stdin caret val dir =
             [ text <|
                 if caret then
                     "|"
+
                 else
                     ""
             ]
