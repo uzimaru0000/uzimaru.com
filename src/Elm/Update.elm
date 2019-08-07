@@ -1,13 +1,14 @@
 module Update exposing (update)
 
 import Browser.Dom
-import Model exposing (..)
-import Html
-import Task
-import Lazy.Tree.Zipper as Zipper exposing (Zipper)
-import Lazy.Tree as Tree
+import Command as Cmd exposing (Command(..), Commands)
 import Directory as Dir exposing (Directory(..))
-import Command as Cmd exposing (Commands, Command(..))
+import Html
+import Lazy.Tree as Tree
+import Lazy.Tree.Zipper as Zipper exposing (Zipper)
+import Model exposing (..)
+import Task
+
 
 
 -- update
@@ -37,12 +38,12 @@ update msg model =
                         |> display cmds
                         |> executeCommand cmds
             in
-                ( { newModel
-                    | input = ""
-                    , history = model.history ++ [ cmds ]
-                  }
-                , tarminalJumpToBotton "tarminal"
-                )
+            ( { newModel
+                | input = ""
+                , history = model.history ++ [ cmds ]
+              }
+            , tarminalJumpToBotton "tarminal"
+            )
 
         Clear ->
             ( { model | history = [], input = "", view = [] }
@@ -57,6 +58,39 @@ update msg model =
         Focus ->
             ( model
             , Task.attempt (\_ -> NoOp) <| Browser.Dom.focus "prompt"
+            )
+
+        GetWindow (Ok { element, viewport }) ->
+            let
+                x =
+                    (viewport.width - element.width) / 2
+
+                y =
+                    (viewport.height - element.height) / 2
+            in
+            ( { model | windowPos = ( x, y ) }
+            , Cmd.none
+            )
+
+        ClickHeader isClick ->
+            ( { model
+                | isClickHeader = isClick
+              }
+            , Cmd.none
+            )
+
+        MoveMouse ( moveX, moveY ) ->
+            let
+                x =
+                    Tuple.first model.windowPos
+
+                y =
+                    Tuple.second model.windowPos
+            in
+            ( { model
+                | windowPos = ( x + moveX, y + moveY )
+              }
+            , Cmd.none
             )
 
         _ ->
@@ -100,7 +134,7 @@ parseCommand str =
                         _ ->
                             None str
             in
-                ( cmd, args )
+            ( cmd, args )
 
         [] ->
             ( None str, [] )
@@ -183,12 +217,12 @@ changeDir pathList maybeDir =
                             dir
                                 |> Zipper.open (Dir.getName >> (==) head)
                     in
-                        case Maybe.map Zipper.current moved of
-                            Just (Directory _ _) ->
-                                changeDir tail moved
+                    case Maybe.map Zipper.current moved of
+                        Just (Directory _ _) ->
+                            changeDir tail moved
 
-                            _ ->
-                                Nothing
+                        _ ->
+                            Nothing
 
                 [] ->
                     maybeDir
