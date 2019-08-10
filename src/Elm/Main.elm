@@ -9,11 +9,10 @@ import Update exposing (..)
 import View exposing (..)
 
 
-
 -- main
 
 
-main : Program () Model Msg
+main : Program JD.Value Model Msg
 main =
     Browser.element
         { init = init

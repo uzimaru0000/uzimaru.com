@@ -6,6 +6,7 @@ import Directory as Dir exposing (Directory(..))
 import Html
 import Lazy.Tree as Tree
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
+import LocalStorage as LS
 import Model exposing (..)
 import Task
 
@@ -42,7 +43,14 @@ update msg model =
                 | input = ""
                 , history = model.history ++ [ cmds ]
               }
-            , tarminalJumpToBotton "tarminal"
+            , [ tarminalJumpToBotton "tarminal"
+              , newModel.directory
+                    |> Zipper.getTree
+                    |> Dir.dismantlers
+                    |> Dir.encoder
+                    |> LS.store
+              ]
+                |> Cmd.batch
             )
 
         Clear ->
