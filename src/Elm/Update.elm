@@ -179,7 +179,7 @@ executeCommand ( cmd, args ) model =
             let
                 newDir =
                     model.directory
-                        |> Zipper.openPath (\p dir -> p == Dir.getName dir) (String.split "/" path)
+                        |> Zipper.openPath dirCheck (String.split "/" path)
             in
             case newDir of
                 Ok dir ->
@@ -202,13 +202,8 @@ executeCommand ( cmd, args ) model =
                             |> Zipper.root
                 }
 
-        ( Remove, path :: _ ) ->
-            let
-                newDir =
-                    model.directory
-                        |> Zipper.openPath (\p dir -> p == Dir.getName dir) (String.split "/" path)
-            in
-            case newDir of
+        ( Remove, _ ) ->
+            case remove args model.directory of
                 Ok dir ->
                     Ok
                         { model
@@ -217,13 +212,8 @@ executeCommand ( cmd, args ) model =
                                     |> Zipper.attempt Zipper.delete
                         }
 
-                Err _ ->
-                    [ Cmd.commandToString Remove ++ ":"
-                    , path ++ ":"
-                    , "No such file or directory"
-                    ]
-                        |> String.join " "
-                        |> Err
+                Err msg ->
+                    Err msg
 
         _ ->
             Ok model
@@ -247,34 +237,47 @@ display ( cmd, args ) model =
     }
 
 
-changeDir : List String -> Maybe (Zipper Directory) -> Maybe (Zipper Directory)
-changeDir pathList maybeDir =
-    case maybeDir of
-        Just dir ->
-            case pathList of
-                ".." :: tail ->
+dirCheck : String -> Directory -> Bool
+dirCheck path dir =
+    case dir of
+        Directory { name } _ ->
+            name == path
+
+        File _ ->
+            False
+
+
+remove : Cmd.Args -> Zipper Directory -> Result String (Zipper Directory)
+remove args dir =
+    case args of
+        maybeOpt :: path :: tail ->
+            case String.uncons maybeOpt of
+                Just ( '-', "r" ) ->
                     dir
-                        |> Zipper.up
-                        |> changeDir tail
+                        |> Zipper.openPath (\p d -> p == Dir.getName d) (String.split "/" path)
+                        |> Result.mapError (always "rm: No such file or directory")
 
-                head :: tail ->
-                    let
-                        moved =
-                            dir
-                                |> Zipper.open (Dir.getName >> (==) head)
-                    in
-                    case Maybe.map Zipper.current moved of
-                        Just (Directory _ _) ->
-                            changeDir tail moved
+                Just ( '-', opt ) ->
+                    Err <| "rm: illegal opiton -- " ++ opt
 
-                        _ ->
-                            Nothing
+                _ ->
+                    Err <| "rm: invalid argument -- " ++ String.join " " args
 
-                [] ->
-                    maybeDir
+        path :: _ ->
+            Zipper.openPath (\p d -> p == Dir.getName d) (String.split "/" path) dir
+                |> Result.mapError (always "rm: No such file or directory")
+                |> Result.andThen
+                    (\d ->
+                        case Zipper.current d of
+                            Directory _ _ ->
+                                Err <| "rm: " ++ path ++ ": is a directory"
 
-        Nothing ->
-            Nothing
+                            File _ ->
+                                Ok dir
+                    )
+
+        [] ->
+            Err <| "usage: rm [-r] file"
 
 
 tarminalJumpToBotton : String -> Cmd Msg
