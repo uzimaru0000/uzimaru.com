@@ -35,9 +35,17 @@ update msg model =
         OnCommand cmds ->
             let
                 newModel =
-                    model
-                        |> display cmds
-                        |> executeCommand cmds
+                    case executeCommand cmds model of
+                        Ok m ->
+                            display cmds m
+
+                        Err errMsg ->
+                            display
+                                (cmds
+                                    |> Tuple.mapFirst Cmd.commandToString
+                                    |> Tuple.mapFirst (\x -> Error x errMsg)
+                                )
+                                model
             in
             ( { newModel
                 | input = ""
@@ -140,55 +148,85 @@ parseCommand str =
                             Remove
 
                         _ ->
-                            None str
+                            Error raw <| "Shell: Unknown command " ++ raw
             in
             ( cmd, args )
 
         [] ->
-            ( None str, [] )
+            ( Error "" "", [] )
 
 
-executeCommand : Commands -> Model -> Model
+executeCommand : Commands -> Model -> Result String Model
 executeCommand ( cmd, args ) model =
     case ( cmd, args ) of
         ( MakeDir, name :: _ ) ->
-            { model
-                | directory =
-                    model.directory
-                        |> Zipper.insert (Tree.singleton <| Directory { name = name } [])
-            }
+            Ok
+                { model
+                    | directory =
+                        model.directory
+                            |> Zipper.insert (Tree.singleton <| Directory { name = name } [])
+                }
 
         ( Touch, name :: _ ) ->
-            { model
-                | directory =
-                    model.directory
-                        |> Zipper.insert (Tree.singleton <| File { name = name })
-            }
+            Ok
+                { model
+                    | directory =
+                        model.directory
+                            |> Zipper.insert (Tree.singleton <| File { name = name })
+                }
 
         ( ChangeDir, path :: _ ) ->
-            { model
-                | directory =
+            let
+                newDir =
                     model.directory
-                        |> Zipper.attempt (Just >> (path |> String.split "/" |> changeDir))
-            }
+                        |> Zipper.openPath (\p dir -> p == Dir.getName dir) (String.split "/" path)
+            in
+            case newDir of
+                Ok dir ->
+                    Ok { model | directory = dir }
+
+                Err _ ->
+                    [ Cmd.commandToString ChangeDir ++ ":"
+                    , "The directory"
+                    , "'" ++ path ++ "'"
+                    , "does not exist"
+                    ]
+                        |> String.join " "
+                        |> Err
 
         ( ChangeDir, [] ) ->
-            { model
-                | directory =
-                    model.directory
-                        |> Zipper.root
-            }
+            Ok
+                { model
+                    | directory =
+                        model.directory
+                            |> Zipper.root
+                }
 
         ( Remove, path :: _ ) ->
-            { model
-                | directory =
+            let
+                newDir =
                     model.directory
-                        |> Zipper.attempt (Zipper.open <| Dir.getName >> (==) path)
-                        |> Zipper.attempt Zipper.delete
-            }
+                        |> Zipper.openPath (\p dir -> p == Dir.getName dir) (String.split "/" path)
+            in
+            case newDir of
+                Ok dir ->
+                    Ok
+                        { model
+                            | directory =
+                                dir
+                                    |> Zipper.attempt Zipper.delete
+                        }
+
+                Err _ ->
+                    [ Cmd.commandToString Remove ++ ":"
+                    , path ++ ":"
+                    , "No such file or directory"
+                    ]
+                        |> String.join " "
+                        |> Err
 
         _ ->
-            model
+            Ok model
 
 
 display : Commands -> Model -> Model
