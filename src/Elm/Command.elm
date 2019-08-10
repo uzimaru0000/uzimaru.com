@@ -8,7 +8,7 @@ import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 
 
 type Command
-    = None String
+    = Error String String
     | Help
     | WhoAmI
     | Work
@@ -31,8 +31,8 @@ type alias Commands =
 commandToString : Command -> String
 commandToString cmd =
     case cmd of
-        None _ ->
-            ""
+        Error c _ ->
+            c
 
         Help ->
             "help"
@@ -65,18 +65,15 @@ commandToString cmd =
 outputView : Zipper Directory -> Command -> Html Commands
 outputView dir cmd =
     case cmd of
-        None str ->
-            div []
-                [ pre
-                    []
-                    [ text <|
-                        if String.isEmpty str then
-                            ""
+        Error _ msg ->
+            div
+                [ if String.isEmpty msg then
+                    Attr.class ""
 
-                        else
-                            "Unknown command "
-                                ++ String.pad (String.length str + 2) '"' str
-                    ]
+                  else
+                    Attr.style "margin" "16px 0"
+                ]
+                [ text msg
                 ]
 
         Help ->
