@@ -1,8 +1,9 @@
-module Directory exposing (Directory(..), Info, builder, decoder, encoder, getName, prompt)
+module Directory exposing (Directory(..), Info, builder, decoder, dismantlers, encoder, getName, prompt)
 
 import Html exposing (..)
 import Json.Decode as JD
 import Json.Encode as JE
+import Lazy.LList as LList
 import Lazy.Tree as Tree exposing (Tree)
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 
@@ -28,6 +29,26 @@ builder =
                 File _ ->
                     []
         )
+
+
+dismantlers : Tree Directory -> Directory
+dismantlers tree =
+    let
+        dir =
+            Tree.item tree
+
+        children =
+            Tree.descendants tree
+    in
+    case dir of
+        Directory info child ->
+            children
+                |> LList.map dismantlers
+                |> LList.toList
+                |> Directory info
+
+        File info ->
+            File info
 
 
 getName : Directory -> String

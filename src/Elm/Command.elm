@@ -1,10 +1,10 @@
-module Command exposing (..)
+module Command exposing (Args, Command(..), Commands, commandToString, createList, dirItem, help, links, list, outputView, whoami, work)
 
+import Directory as Dir exposing (Directory(..))
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Ev
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
-import Directory as Dir exposing (Directory(..))
 
 
 type Command
@@ -72,6 +72,7 @@ outputView dir cmd =
                     [ text <|
                         if String.isEmpty str then
                             ""
+
                         else
                             "Unknown command "
                                 ++ String.pad (String.length str + 2) '"' str
@@ -117,17 +118,17 @@ help =
                 , "List links which to me."
                 ]
     in
-        div [ Attr.class "help" ]
-            [ info
-                |> List.map
-                    (\( cmd, b ) ->
-                        li []
-                            [ a [ Ev.onClick ( cmd, [] ) ] [ text <| commandToString cmd ]
-                            , span [] [ text b ]
-                            ]
-                    )
-                |> ul [ Attr.class "list" ]
-            ]
+    div [ Attr.class "help" ]
+        [ info
+            |> List.map
+                (\( cmd, b ) ->
+                    li []
+                        [ a [ Ev.onClick ( cmd, [] ) ] [ text <| commandToString cmd ]
+                        , span [] [ text b ]
+                        ]
+                )
+            |> ul [ Attr.class "list" ]
+        ]
 
 
 whoami : Html Commands
@@ -140,12 +141,12 @@ whoami =
             , ( "Likes", "Unity, Elm, Golang" )
             ]
     in
-        div [ Attr.class "whoami" ]
-            [ figure [] [ img [ Attr.src "icon2.png" ] [] ]
-            , info
-                |> List.map createList
-                |> ul [ Attr.class "list" ]
-            ]
+    div [ Attr.class "whoami" ]
+        [ figure [] [ img [ Attr.src "icon2.png" ] [] ]
+        , info
+            |> List.map createList
+            |> ul [ Attr.class "list" ]
+        ]
 
 
 work : Html Commands
@@ -158,17 +159,17 @@ work =
             , ( "VR", "Summary made with VR.", "https://twitter.com/i/moments/912461981851860992" )
             ]
     in
-        div [ Attr.class "work" ]
-            [ info
-                |> List.map
-                    (\( title, subTitle, url ) ->
-                        li []
-                            [ a [ Attr.href url, Attr.target "_blink" ] [ text title ]
-                            , span [] [ text subTitle ]
-                            ]
-                    )
-                |> ul [ Attr.class "list" ]
-            ]
+    div [ Attr.class "work" ]
+        [ info
+            |> List.map
+                (\( title, subTitle, url ) ->
+                    li []
+                        [ a [ Attr.href url, Attr.target "_blink" ] [ text title ]
+                        , span [] [ text subTitle ]
+                        ]
+                )
+            |> ul [ Attr.class "list" ]
+        ]
 
 
 links : Html Commands
@@ -182,16 +183,16 @@ links =
             , ( "Blog", "http://uzimaru0601.hatenablog.com" )
             ]
     in
-        div [ Attr.class "links" ]
-            [ info
-                |> List.map
-                    (\( title, url ) ->
-                        li []
-                            [ a [ Attr.href url, Attr.target "_blink" ] [ text title ]
-                            ]
-                    )
-                |> ul [ Attr.class "list" ]
-            ]
+    div [ Attr.class "links" ]
+        [ info
+            |> List.map
+                (\( title, url ) ->
+                    li []
+                        [ a [ Attr.href url, Attr.target "_blink" ] [ text title ]
+                        ]
+                )
+            |> ul [ Attr.class "list" ]
+        ]
 
 
 list : Zipper Directory -> Html Commands

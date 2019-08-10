@@ -5,6 +5,8 @@ import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
 import Json.Decode as JD
 import Json.Encode as JE
+import Lazy.Tree as Tree exposing (Tree)
+import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import Test exposing (..)
 
 
@@ -20,6 +22,16 @@ directoryData =
                 []
             ]
         ]
+
+
+directoryTree : Tree Dir.Directory
+directoryTree =
+    Dir.builder directoryData
+
+
+directoryZipper : Zipper Dir.Directory
+directoryZipper =
+    Zipper.fromTree directoryTree
 
 
 jsonData : String

@@ -45,8 +45,8 @@ update msg model =
               }
             , [ tarminalJumpToBotton "tarminal"
               , newModel.directory
-                    |> Debug.log ""
-                    |> Zipper.current
+                    |> Zipper.getTree
+                    |> Dir.dismantlers
                     |> Dir.encoder
                     |> LS.store
               ]
