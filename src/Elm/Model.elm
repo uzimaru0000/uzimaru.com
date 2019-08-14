@@ -28,7 +28,6 @@ type Msg
     | OnCommand Commands
     | Focus
     | Clear
-    | GetWrapper Dom.Element (Result Dom.Error Dom.Element)
     | GetWindow (Result Dom.Error Dom.Element)
     | ClickHeader Bool
     | MoveMouse ( Float, Float )
