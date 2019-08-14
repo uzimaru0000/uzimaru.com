@@ -1,4 +1,19 @@
-module Command exposing (Args, Command(..), Commands, commandToString, createList, dirItem, help, links, list, outputView, whoami, work)
+module Command exposing
+    ( Args
+    , Command(..)
+    , Commands
+    , changeDir
+    , commandToString
+    , createList
+    , dirItem
+    , help
+    , links
+    , list
+    , outputView
+    , remove
+    , whoami
+    , work
+    )
 
 import Directory as Dir exposing (Directory(..))
 import Html exposing (..)
@@ -26,6 +41,109 @@ type alias Args =
 
 type alias Commands =
     ( Command, Args )
+
+
+type CDError
+    = NotExist
+    | TargetIsFile
+
+
+remove : Args -> Zipper Directory -> Result String (Zipper Directory)
+remove args dir =
+    let
+        newDir =
+            case args of
+                maybeOpt :: path :: _ ->
+                    case String.uncons maybeOpt of
+                        Just ( '-', "r" ) ->
+                            dir
+                                |> Zipper.openPath (\p d -> p == Dir.getName d) (String.split "/" path)
+                                |> Result.mapError (always "rm: No such file or directory")
+
+                        Just ( '-', opt ) ->
+                            Err <| "rm: illegal opiton -- " ++ opt
+
+                        _ ->
+                            Err <| "rm: invalid argument -- " ++ String.join " " args
+
+                path :: _ ->
+                    dir
+                        |> Zipper.openPath (\p d -> p == Dir.getName d) (String.split "/" path)
+                        |> Result.mapError (always "rm: No such file or directory")
+                        |> Result.andThen
+                            (\d ->
+                                case Zipper.current d of
+                                    Directory _ _ ->
+                                        Err <| "rm: " ++ path ++ ": is a directory"
+
+                                    File _ ->
+                                        Ok d
+                            )
+
+                [] ->
+                    Err "usage: rm [-r] file"
+    in
+    newDir
+        |> Result.map (Zipper.attempt Zipper.delete)
+
+
+changeDir : Args -> Zipper Directory -> Result String (Zipper Directory)
+changeDir args dir =
+    case args of
+        path :: _ ->
+            changeDirHelper (String.split "/" path) dir
+                |> Result.mapError
+                    (\x ->
+                        case x of
+                            NotExist ->
+                                "cd: The directory '" ++ path ++ "' does not exist"
+
+                            TargetIsFile ->
+                                "cd: '" ++ path ++ "' is not a directory"
+                    )
+
+        [] ->
+            Ok <| Zipper.root dir
+
+
+changeDirHelper : List String -> Zipper Directory -> Result CDError (Zipper Directory)
+changeDirHelper path dir =
+    case path of
+        ".." :: tail ->
+            dir
+                |> Zipper.up
+                |> Result.fromMaybe NotExist
+                |> Result.andThen (changeDirHelper tail)
+
+        "." :: tail ->
+            changeDirHelper tail dir
+
+        head :: tail ->
+            dir
+                |> Zipper.open
+                    (\x ->
+                        case x of
+                            Directory { name } _ ->
+                                name == head
+
+                            File _ ->
+                                False
+                    )
+                |> Result.fromMaybe
+                    (case Zipper.open (Dir.getName >> (==) head) dir |> Maybe.map Zipper.current of
+                        Just (File _) ->
+                            TargetIsFile
+
+                        Nothing ->
+                            NotExist
+
+                        _ ->
+                            NotExist
+                    )
+                |> Result.andThen (changeDirHelper tail)
+
+        [] ->
+            Ok dir
 
 
 commandToString : Command -> String
