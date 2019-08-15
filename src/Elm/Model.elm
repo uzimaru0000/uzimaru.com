@@ -66,7 +66,7 @@ init value =
       , windowPos = ( 0, 0 )
       }
     , [ Task.attempt (\_ -> NoOp) <| Dom.focus "prompt"
-      , Task.perform identity (Task.succeed <| OnCommand ( Help, [] ))
+      , Task.perform identity (Task.succeed <| OnCommand ( Help, { args = [], opts = [], raw = "help" } ))
       , Task.attempt GetWindow <| Dom.getElement "window"
       ]
         |> Cmd.batch

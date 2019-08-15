@@ -26,7 +26,7 @@ update msg model =
             )
 
         OnEnter ->
-            (parseCommand model.input
+            (Cmd.parseCommands model.input
                 |> OnCommand
                 |> update
             )
@@ -113,51 +113,8 @@ update msg model =
             ( model, Cmd.none )
 
 
-parseCommand : String -> Commands
-parseCommand str =
-    case String.split " " str |> List.filter (not << String.isEmpty) of
-        raw :: args ->
-            let
-                cmd =
-                    case raw of
-                        "whoami" ->
-                            WhoAmI
-
-                        "work" ->
-                            Work
-
-                        "link" ->
-                            Link
-
-                        "help" ->
-                            Help
-
-                        "ls" ->
-                            List
-
-                        "mkdir" ->
-                            MakeDir
-
-                        "touch" ->
-                            Touch
-
-                        "cd" ->
-                            ChangeDir
-
-                        "rm" ->
-                            Remove
-
-                        _ ->
-                            Error raw <| "Shell: Unknown command " ++ raw
-            in
-            ( cmd, args )
-
-        [] ->
-            ( Error "" "", [] )
-
-
 executeCommand : Commands -> Model -> Result String Model
-executeCommand ( cmd, args ) model =
+executeCommand ( cmd, { args, opts } as argv ) model =
     case ( cmd, args ) of
         ( MakeDir, name :: _ ) ->
             Ok
@@ -176,7 +133,7 @@ executeCommand ( cmd, args ) model =
                 }
 
         ( ChangeDir, _ ) ->
-            case Cmd.changeDir args model.directory of
+            case Cmd.changeDir argv model.directory of
                 Ok dir ->
                     Ok { model | directory = dir }
 
@@ -184,7 +141,7 @@ executeCommand ( cmd, args ) model =
                     Err msg
 
         ( Remove, _ ) ->
-            case Cmd.remove args model.directory of
+            case Cmd.remove argv model.directory of
                 Ok dir ->
                     Ok { model | directory = dir }
 
@@ -196,16 +153,14 @@ executeCommand ( cmd, args ) model =
 
 
 display : Commands -> Model -> Model
-display ( cmd, args ) model =
+display ( cmd, { raw } ) model =
     { model
         | view =
             model.view
                 ++ [ Html.div []
                         [ Html.span []
                             [ Dir.prompt model.directory
-                            , (Cmd.commandToString cmd :: args)
-                                |> String.join " "
-                                |> Html.text
+                            , Html.text raw
                             ]
                         , Cmd.outputView model.directory cmd |> Html.map OnCommand
                         ]

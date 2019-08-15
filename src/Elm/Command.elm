@@ -10,6 +10,9 @@ module Command exposing
     , links
     , list
     , outputView
+    , parseArgs
+    , parseCommand
+    , parseCommands
     , remove
     , whoami
     , work
@@ -36,7 +39,10 @@ type Command
 
 
 type alias Args =
-    List String
+    { opts : List String
+    , args : List String
+    , raw : String
+    }
 
 
 type alias Commands =
@@ -48,36 +54,106 @@ type CDError
     | TargetIsFile
 
 
+parseCommands : String -> Commands
+parseCommands str =
+    case String.split " " str |> List.filter (not << String.isEmpty) of
+        rawCmd :: args ->
+            let
+                parsedArgs =
+                    parseArgs args
+            in
+            ( parseCommand rawCmd, { parsedArgs | raw = str } )
+
+        [] ->
+            ( Error "" "", { opts = [], args = [], raw = str } )
+
+
+parseCommand : String -> Command
+parseCommand raw =
+    case raw of
+        "whoami" ->
+            WhoAmI
+
+        "work" ->
+            Work
+
+        "link" ->
+            Link
+
+        "help" ->
+            Help
+
+        "ls" ->
+            List
+
+        "mkdir" ->
+            MakeDir
+
+        "touch" ->
+            Touch
+
+        "cd" ->
+            ChangeDir
+
+        "rm" ->
+            Remove
+
+        _ ->
+            Error raw <| "Shell: Unknown command " ++ raw
+
+
+parseArgs : List String -> Args
+parseArgs rawArgs =
+    rawArgs
+        |> List.foldl
+            (\x { args, opts, raw } ->
+                case String.uncons x of
+                    Just ( '-', opt ) ->
+                        { args = args, opts = opt :: opts, raw = raw }
+
+                    Just ( _, opt ) ->
+                        { args = x :: args, opts = opts, raw = raw }
+
+                    Nothing ->
+                        { args = args, opts = opts, raw = raw }
+            )
+            { args = [], opts = [], raw = "" }
+
+
 remove : Args -> Zipper Directory -> Result String (Zipper Directory)
-remove args dir =
+remove { opts, args } dir =
     let
+        flags =
+            opts
+                |> List.foldl
+                    (\x acc ->
+                        case x of
+                            "r" ->
+                                { acc | isRecursive = True }
+
+                            _ ->
+                                { acc | error = Just <| "rm: illegal opiton -- " ++ x }
+                    )
+                    { isRecursive = False, error = Nothing }
+
         newDir =
             case args of
-                maybeOpt :: path :: _ ->
-                    case String.uncons maybeOpt of
-                        Just ( '-', "r" ) ->
-                            dir
-                                |> Zipper.openPath (\p d -> p == Dir.getName d) (String.split "/" path)
-                                |> Result.mapError (always "rm: No such file or directory")
-
-                        Just ( '-', opt ) ->
-                            Err <| "rm: illegal opiton -- " ++ opt
-
-                        _ ->
-                            Err <| "rm: invalid argument -- " ++ String.join " " args
-
                 path :: _ ->
                     dir
                         |> Zipper.openPath (\p d -> p == Dir.getName d) (String.split "/" path)
-                        |> Result.mapError (always "rm: No such file or directory")
+                        |> Result.mapError (\_ -> flags.error |> Maybe.withDefault "rm: No such file or directory")
                         |> Result.andThen
                             (\d ->
-                                case Zipper.current d of
-                                    Directory _ _ ->
-                                        Err <| "rm: " ++ path ++ ": is a directory"
+                                if flags.isRecursive then
+                                    Ok d
 
-                                    File _ ->
-                                        Ok d
+                                else
+                                    case Zipper.current d of
+                                        Directory _ _ ->
+                                            Err <| "rm: " ++ path ++ ": is a directory"
+
+                                        File _ ->
+                                            Ok d
                             )
 
                 [] ->
@@ -88,7 +164,7 @@ remove args dir =
 
 
 changeDir : Args -> Zipper Directory -> Result String (Zipper Directory)
-changeDir args dir =
+changeDir { opts, args } dir =
     case args of
         path :: _ ->
             changeDirHelper (String.split "/" path) dir
@@ -232,13 +308,19 @@ help =
                 , "List works which were made by me."
                 , "List links which to me."
                 ]
+
+        args cmd =
+            { opts = []
+            , args = []
+            , raw = commandToString cmd
+            }
     in
     div [ Attr.class "help" ]
         [ info
             |> List.map
                 (\( cmd, b ) ->
                     li []
-                        [ a [ Ev.onClick ( cmd, [] ) ] [ text <| commandToString cmd ]
+                        [ a [ Ev.onClick ( cmd, args cmd ) ] [ text <| commandToString cmd ]
                         , span [] [ text b ]
                         ]
                 )
