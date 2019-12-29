@@ -257,7 +257,7 @@ whoami =
             ]
     in
     div [ Attr.class "whoami" ]
-        [ figure [] [ img [ Attr.src "icon2.png" ] [] ]
+        [ figure [] [ img [ Attr.src "https://pbs.twimg.com/profile_images/1208808311790813184/LuBDQbAI_400x400.jpg" ] [] ]
         , info
             |> List.map createList
             |> ul [ Attr.class "list" ]
