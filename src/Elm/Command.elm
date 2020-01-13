@@ -269,8 +269,8 @@ work =
     let
         info =
             [ ( "WeatherApp", "WeatherApp made by Elm.", "https://uzimaru0000.github.io/elm-weather-app" )
-            , ( "Sticky", "Sticky note app that can use markdown.", "https://github.com/uzimaru0000/Sticky" )
-            , ( "Stock", "Notebook app that can use Markdown.", "https://uzimaru0000.github.io/stock" )
+            , ( "UniTEA", "Implementation of The Elm Architecture for Unity3D", "https://github.com/uzimaru0000/UniTEA" )
+            , ( "TabClock", "Chrome extension to display clock on NewTab", "https://github.com/uzimaru0000/TabClock" )
             , ( "VR", "Summary made with VR.", "https://twitter.com/i/moments/912461981851860992" )
             ]
     in
@@ -295,7 +295,7 @@ links =
             , ( "Twitter", "https://twitter.com/uzimaru0000" )
             , ( "Facebook", "https://www.facebook.com/shuji.oba.1" )
             , ( "Qiita", "https://qiita.com/uzimaru0000" )
-            , ( "Blog", "http://uzimaru0601.hatenablog.com" )
+            , ( "Blog", "http://blog.uzimaru.com" )
             ]
     in
     div [ Attr.class "links" ]
