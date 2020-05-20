@@ -1,8 +1,0 @@
-{
-    "title" : "links",
-    "data" : ["GitHub", "Twitter", "Facebook"],
-    "subData" : ["#", "#", "#"],
-    "type" : 2,
-    "contentUrl" : "post/links.md",
-    "imgUrl" : ""
-}

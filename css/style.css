@@ -1,0 +1,128 @@
+@import url(https://fonts.googleapis.com/css?family=Press+Start+2P);
+body {
+  margin: 0;
+  padding: 0;
+  background: #c8c8c8;
+  color: #88ff63;
+  font-family: "Press Start 2P", cursive;
+  font-size: 16px; }
+
+#wrapper {
+  position: relative;
+  height: 100vh;
+  animation: show 1s ease; }
+
+#window {
+  position: absolute;
+  width: 80%;
+  height: 80%; }
+
+#tarminal {
+  padding: 16px;
+  background: #282828;
+  height: calc(100% - 24px);
+  box-shadow: 0 0px 5px 0px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+  overflow: scroll; }
+
+#header {
+  height: 24px;
+  background: #575757;
+  z-index: 100;
+  box-shadow: 0 0 5px 0px rgba(0, 0, 0, 0.5); }
+  #header span {
+    display: inline-block;
+    width: calc(24px - 10px);
+    height: calc(24px - 10px);
+    margin: calc(10px / 2);
+    border-radius: 50%; }
+  #header span:nth-child(1) {
+    background: #ff5454; }
+  #header span:nth-child(2) {
+    background: #ffc054; }
+  #header span:nth-child(3) {
+    background: #afff54; }
+
+#prompt {
+  opacity: 0;
+  position: absolute; }
+
+pre {
+  display: inline;
+  font-family: "Press Start 2P", cursive; }
+
+.command {
+  font-family: "Press Start 2P", cursive;
+  font-size: 16px; }
+
+ul.list li {
+  display: flex;
+  padding: 2px; }
+  ul.list li *:first-child {
+    flex-basis: 20%; }
+
+.whoami {
+  display: flex; }
+  .whoami figure {
+    max-width: 160px;
+    max-height: 160px; }
+    .whoami figure img {
+      width: 100%;
+      height: 100%; }
+  .whoami ul {
+    display: flex;
+    flex: 1;
+    padding: 0;
+    flex-direction: column;
+    justify-content: space-around; }
+
+.ls .directory {
+  color: #48f; }
+
+.ls .file {
+  color: #eee; }
+
+.ls li {
+  flex-basis: 20%;
+  padding: 2px; }
+
+.ls ul {
+  display: flex;
+  list-style-type: none;
+  flex-wrap: wrap; }
+
+a {
+  text-decoration: none;
+  color: #ffbb38;
+  cursor: pointer; }
+
+a:hover {
+  text-decoration: underline; }
+
+@keyframes show {
+  from {
+    opacity: 0; }
+  to {
+    opacity: 1; } }
+
+@media (max-width: 1020px) {
+  #window {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%; }
+  #tarminal {
+    height: calc(100% - 24px); } }
+
+@media (max-width: 767px) {
+  ul.list li {
+    flex-direction: column;
+    margin: 1px; }
+    ul.list li *:first-child:before {
+      content: "- "; }
+  .whoami {
+    flex-direction: column; }
+    .whoami figure {
+      margin-left: auto;
+      margin-right: auto; } }
+
