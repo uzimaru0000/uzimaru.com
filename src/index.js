@@ -1,6 +1,5 @@
 'use strict';
 
-import './assets/icon2.png';
 import { Elm } from './Elm/Main.elm';
 
 const dirData = localStorage.getItem('dir');
