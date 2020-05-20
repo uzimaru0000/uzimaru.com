@@ -19,6 +19,7 @@ import Directory as Dir exposing (Directory(..))
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Ev
+import Icon exposing (icon)
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 
 
@@ -257,7 +258,7 @@ whoami =
             ]
     in
     div [ Attr.class "whoami" ]
-        [ figure [] [ img [ Attr.src "icon2.png" ] [] ]
+        [ figure [] [ icon ]
         , info
             |> List.map createList
             |> ul [ Attr.class "list" ]
