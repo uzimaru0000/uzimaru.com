@@ -252,7 +252,7 @@ whoami =
     let
         info =
             [ ( "Name", "Shuji Oba (uzimaru)" )
-            , ( "Age", "21" )
+            , ( "Age", "22" )
             , ( "Hobby", "Cooking, Programming" )
             , ( "Likes", "Unity, Elm, Golang" )
             ]
