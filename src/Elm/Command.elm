@@ -1,8 +1,5 @@
 module Command exposing
-    ( Args
-    , Command(..)
-    , Commands
-    , changeDir
+    ( Command(..)
     , commandToString
     , createList
     , dirItem
@@ -10,38 +7,46 @@ module Command exposing
     , links
     , list
     , outputView
-    , remove
+    , parser
     , whoami
     , work
     )
 
+import Command.Help as HelpCmd
+import Command.Link as LinkCmd
+import Command.WhoAmI as WhoAmICmd
+import Command.Work as WorkCmd
 import Directory as Dir exposing (Directory(..))
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Ev
 import Icon exposing (icon)
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
+import Parser exposing ((|.), (|=), Parser)
+import Set
+
+
+type CommandTag
+    = Help_
+    | WhoAmI_
+    | Work_
+    | Link_
 
 
 type Command
     = Error String String
-    | Help
-    | WhoAmI
-    | Work
-    | Link
-    | List
-    | MakeDir
-    | Touch
-    | ChangeDir
-    | Remove
+    | Help (HelpCmd.Help CommandTag)
+    | WhoAmI WhoAmICmd.WhoAmI
+    | Work WorkCmd.Work
+    | Link LinkCmd.Link
 
 
-type alias Args =
-    List String
 
-
-type alias Commands =
-    ( Command, Args )
+-- | List
+-- | MakeDir
+-- | Touch
+-- | ChangeDir
+-- | Remove
 
 
 type CDError
@@ -49,62 +54,86 @@ type CDError
     | TargetIsFile
 
 
-remove : Args -> Zipper Directory -> Result String (Zipper Directory)
-remove args dir =
-    let
-        newDir =
-            case args of
-                maybeOpt :: path :: _ ->
-                    case String.uncons maybeOpt of
-                        Just ( '-', "r" ) ->
-                            dir
-                                |> Zipper.openPath (\p d -> p == Dir.getName d) (String.split "/" path)
-                                |> Result.mapError (always "rm: No such file or directory")
-
-                        Just ( '-', opt ) ->
-                            Err <| "rm: illegal option -- " ++ opt
-
-                        _ ->
-                            Err <| "rm: invalid argument -- " ++ String.join " " args
-
-                path :: _ ->
-                    dir
-                        |> Zipper.openPath (\p d -> p == Dir.getName d) (String.split "/" path)
-                        |> Result.mapError (always "rm: No such file or directory")
-                        |> Result.andThen
-                            (\d ->
-                                case Zipper.current d of
-                                    Directory _ _ ->
-                                        Err <| "rm: " ++ path ++ ": is a directory"
-
-                                    File _ ->
-                                        Ok d
-                            )
-
-                [] ->
-                    Err "usage: rm [-r] file"
-    in
-    newDir
-        |> Result.map (Zipper.attempt Zipper.delete)
+parser : Parser Command
+parser =
+    Parser.oneOf
+        [ HelpCmd.parser strToCmd |> Parser.map Help
+        , WhoAmICmd.parser |> Parser.map WhoAmI
+        , WorkCmd.parser |> Parser.map Work
+        , LinkCmd.parser |> Parser.map Link
+        , Parser.succeed Error
+            |= anyString
+            |= Parser.succeed ""
+        ]
 
 
-changeDir : Args -> Zipper Directory -> Result String (Zipper Directory)
-changeDir args dir =
-    case args of
-        path :: _ ->
-            changeDirHelper (String.split "/" path) dir
-                |> Result.mapError
-                    (\x ->
-                        case x of
-                            NotExist ->
-                                "cd: The directory '" ++ path ++ "' does not exist"
+strToCmd : String -> Maybe CommandTag
+strToCmd str =
+    case str of
+        "help" ->
+            Just Help_
 
-                            TargetIsFile ->
-                                "cd: '" ++ path ++ "' is not a directory"
-                    )
+        "whoami" ->
+            Just WhoAmI_
 
-        [] ->
-            Ok <| Zipper.root dir
+        "link" ->
+            Just Link_
+
+        "work" ->
+            Just Work_
+
+        _ ->
+            Nothing
+
+
+
+-- remove : Args -> Zipper Directory -> Result String (Zipper Directory)
+-- remove args dir =
+--     let
+--         newDir =
+--             case args of
+--                 maybeOpt :: path :: _ ->
+--                     case String.uncons maybeOpt of
+--                         Just ( '-', "r" ) ->
+--                             dir
+--                                 |> Zipper.openPath (\p d -> p == Dir.getName d) (String.split "/" path)
+--                                 |> Result.mapError (always "rm: No such file or directory")
+--                         Just ( '-', opt ) ->
+--                             Err <| "rm: illegal opiton -- " ++ opt
+--                         _ ->
+--                             Err <| "rm: invalid argument -- " ++ String.join " " args
+--                 path :: _ ->
+--                     dir
+--                         |> Zipper.openPath (\p d -> p == Dir.getName d) (String.split "/" path)
+--                         |> Result.mapError (always "rm: No such file or directory")
+--                         |> Result.andThen
+--                             (\d ->
+--                                 case Zipper.current d of
+--                                     Directory _ _ ->
+--                                         Err <| "rm: " ++ path ++ ": is a directory"
+--                                     File _ ->
+--                                         Ok d
+--                             )
+--                 [] ->
+--                     Err "usage: rm [-r] file"
+--     in
+--     newDir
+--         |> Result.map (Zipper.attempt Zipper.delete)
+-- changeDir : Args -> Zipper Directory -> Result String (Zipper Directory)
+-- changeDir args dir =
+--     case args of
+--         path :: _ ->
+--             changeDirHelper (String.split "/" path) dir
+--                 |> Result.mapError
+--                     (\x ->
+--                         case x of
+--                             NotExist ->
+--                                 "cd: The directory '" ++ path ++ "' does not exist"
+--                             TargetIsFile ->
+--                                 "cd: '" ++ path ++ "' is not a directory"
+--                     )
+--         [] ->
+--             Ok <| Zipper.root dir
 
 
 changeDirHelper : List String -> Zipper Directory -> Result CDError (Zipper Directory)
@@ -153,62 +182,15 @@ commandToString cmd =
         Error c _ ->
             c
 
-        Help ->
-            "help"
-
-        WhoAmI ->
-            "whoami"
-
-        Work ->
-            "work"
-
-        Link ->
-            "link"
-
-        List ->
-            "ls"
-
-        MakeDir ->
-            "mkdir"
-
-        Touch ->
-            "touch"
-
-        ChangeDir ->
-            "cd"
-
-        Remove ->
-            "rm"
+        _ ->
+            "TODO"
 
 
-outputView : Zipper Directory -> Command -> Html Commands
-outputView dir cmd =
+outputView : Command -> Html Command
+outputView cmd =
     case cmd of
-        Error _ msg ->
-            div
-                [ if String.isEmpty msg then
-                    Attr.class ""
-
-                  else
-                    Attr.style "margin" "16px 0"
-                ]
-                [ text msg
-                ]
-
-        Help ->
-            help
-
-        WhoAmI ->
-            whoami
-
-        Work ->
-            work
-
-        Link ->
-            links
-
-        List ->
-            list dir
+        Help helpCmd ->
+            help helpCmd
 
         _ ->
             text ""
@@ -222,32 +204,21 @@ createList ( a, b ) =
         ]
 
 
-help : Html Commands
-help =
-    let
-        info =
-            List.map2 Tuple.pair
-                [ Help, WhoAmI, Work, Link ]
-                [ "Help about this site."
-                , "Who is me?"
-                , "List works which were made by me."
-                , "List links which to me."
-                ]
-    in
+help : HelpCmd.Help CommandTag -> Html Command
+help (HelpCmd.Help args) =
     div [ Attr.class "help" ]
-        [ info
-            |> List.map
-                (\( cmd, b ) ->
-                    li []
-                        [ a [ Ev.onClick ( cmd, [] ) ] [ text <| commandToString cmd ]
-                        , span [] [ text b ]
-                        ]
-                )
-            |> ul [ Attr.class "list" ]
+        [ case args.command of
+            Just cmd ->
+                case cmd of
+                    _ ->
+                        HelpCmd.help
+
+            _ ->
+                HelpCmd.help
         ]
 
 
-whoami : Html Commands
+whoami : Html Command
 whoami =
     let
         info =
@@ -265,7 +236,7 @@ whoami =
         ]
 
 
-work : Html Commands
+work : Html Command
 work =
     let
         info =
@@ -288,7 +259,7 @@ work =
         ]
 
 
-links : Html Commands
+links : Html Command
 links =
     let
         info =
@@ -311,7 +282,7 @@ links =
         ]
 
 
-list : Zipper Directory -> Html Commands
+list : Zipper Directory -> Html Command
 list dir =
     div [ Attr.class "ls" ]
         [ dir
@@ -321,7 +292,7 @@ list dir =
         ]
 
 
-dirItem : Directory -> Html Commands
+dirItem : Directory -> Html Command
 dirItem dir =
     case dir of
         Directory { name } _ ->

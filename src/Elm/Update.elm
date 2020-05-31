@@ -1,13 +1,14 @@
 module Update exposing (update)
 
 import Browser.Dom
-import Command as Cmd exposing (Command(..), Commands)
+import Command as Cmd exposing (Command(..))
 import Directory as Dir exposing (Directory(..))
 import Html
 import Lazy.Tree as Tree
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import LocalStorage as LS
 import Model exposing (..)
+import Parser
 import Task
 
 
@@ -32,24 +33,24 @@ update msg model =
             )
                 model
 
-        OnCommand cmds ->
+        OnCommand cmd ->
             let
                 newModel =
-                    case executeCommand cmds model of
+                    case executeCommand cmd model of
                         Ok m ->
-                            display cmds m
+                            display cmd m
 
                         Err errMsg ->
                             display
-                                (cmds
-                                    |> Tuple.mapFirst Cmd.commandToString
-                                    |> Tuple.mapFirst (\x -> Error x errMsg)
+                                (cmd
+                                    |> Cmd.commandToString
+                                    |> (\x -> Error x errMsg)
                                 )
                                 model
             in
             ( { newModel
                 | input = ""
-                , history = model.history ++ [ cmds ]
+                , history = model.history ++ [ cmd ]
               }
             , [ tarminalJumpToBotton "tarminal"
               , newModel.directory
@@ -113,101 +114,35 @@ update msg model =
             ( model, Cmd.none )
 
 
-parseCommand : String -> Commands
+parseCommand : String -> Command
 parseCommand str =
-    case String.split " " str |> List.filter (not << String.isEmpty) of
-        raw :: args ->
-            let
-                cmd =
-                    case raw of
-                        "whoami" ->
-                            WhoAmI
+    case Parser.run Cmd.parser str of
+        Ok cmd ->
+            cmd
 
-                        "work" ->
-                            Work
-
-                        "link" ->
-                            Link
-
-                        "help" ->
-                            Help
-
-                        "ls" ->
-                            List
-
-                        "mkdir" ->
-                            MakeDir
-
-                        "touch" ->
-                            Touch
-
-                        "cd" ->
-                            ChangeDir
-
-                        "rm" ->
-                            Remove
-
-                        _ ->
-                            Error raw <| "Shell: Unknown command " ++ raw
-            in
-            ( cmd, args )
-
-        [] ->
-            ( Error "" "", [] )
+        Err _ ->
+            Cmd.Error "" ""
 
 
-executeCommand : Commands -> Model -> Result String Model
-executeCommand ( cmd, args ) model =
-    case ( cmd, args ) of
-        ( MakeDir, name :: _ ) ->
-            Ok
-                { model
-                    | directory =
-                        model.directory
-                            |> Zipper.insert (Tree.singleton <| Directory { name = name } [])
-                }
-
-        ( Touch, name :: _ ) ->
-            Ok
-                { model
-                    | directory =
-                        model.directory
-                            |> Zipper.insert (Tree.singleton <| File { name = name })
-                }
-
-        ( ChangeDir, _ ) ->
-            case Cmd.changeDir args model.directory of
-                Ok dir ->
-                    Ok { model | directory = dir }
-
-                Err msg ->
-                    Err msg
-
-        ( Remove, _ ) ->
-            case Cmd.remove args model.directory of
-                Ok dir ->
-                    Ok { model | directory = dir }
-
-                Err msg ->
-                    Err msg
-
+executeCommand : Command -> Model -> Result String Model
+executeCommand cmd model =
+    case cmd of
         _ ->
             Ok model
 
 
-display : Commands -> Model -> Model
-display ( cmd, args ) model =
+display : Command -> Model -> Model
+display cmd model =
     { model
         | view =
             model.view
                 ++ [ Html.div []
                         [ Html.span []
                             [ Dir.prompt model.directory
-                            , (Cmd.commandToString cmd :: args)
-                                |> String.join " "
+                            , Cmd.commandToString cmd
                                 |> Html.text
                             ]
-                        , Cmd.outputView model.directory cmd |> Html.map OnCommand
+                        , Cmd.outputView cmd |> Html.map OnCommand
                         ]
                    ]
     }

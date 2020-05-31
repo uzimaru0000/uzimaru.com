@@ -2,6 +2,7 @@ module Model exposing (Model, Msg(..), init)
 
 import Browser.Dom as Dom
 import Command exposing (..)
+import Command.Help as HelpCmd
 import Directory as Dir exposing (Directory(..))
 import Html exposing (Html)
 import Json.Decode as JD
@@ -11,7 +12,7 @@ import Task
 
 type alias Model =
     { input : String
-    , history : List Commands
+    , history : List Command
     , view : List (Html Msg)
     , caret : Bool
     , directory : Zipper Directory
@@ -25,7 +26,7 @@ type Msg
     | Tick
     | OnInput String
     | OnEnter
-    | OnCommand Commands
+    | OnCommand Command
     | Focus
     | Clear
     | GetWindow (Result Dom.Error Dom.Element)
@@ -66,7 +67,7 @@ init value =
       , windowPos = ( 0, 0 )
       }
     , [ Task.attempt (\_ -> NoOp) <| Dom.focus "prompt"
-      , Task.perform identity (Task.succeed <| OnCommand ( Help, [] ))
+      , Task.perform identity (Task.succeed <| OnCommand (Help <| HelpCmd.Help { command = Nothing }))
       , Task.attempt GetWindow <| Dom.getElement "window"
       ]
         |> Cmd.batch
