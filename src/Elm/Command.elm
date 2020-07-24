@@ -62,7 +62,7 @@ remove args dir =
                                 |> Result.mapError (always "rm: No such file or directory")
 
                         Just ( '-', opt ) ->
-                            Err <| "rm: illegal opiton -- " ++ opt
+                            Err <| "rm: illegal option -- " ++ opt
 
                         _ ->
                             Err <| "rm: invalid argument -- " ++ String.join " " args
