@@ -3,8 +3,6 @@ module Update exposing (update)
 import Browser.Dom
 import Command as Cmd exposing (Command(..))
 import Directory as Dir exposing (Directory(..))
-import Html
-import Lazy.Tree as Tree
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import LocalStorage as LS
 import Model exposing (..)
@@ -31,29 +29,15 @@ update msg model =
                 |> OnCommand
                 |> update
             )
-                model
+                { model | rowCmds = model.rowCmds ++ [ model.input ] }
 
         OnCommand cmd ->
-            let
-                newModel =
-                    case executeCommand cmd model of
-                        Ok m ->
-                            display cmd m
-
-                        Err errMsg ->
-                            display
-                                (cmd
-                                    |> Cmd.commandToString
-                                    |> (\x -> Error x errMsg)
-                                )
-                                model
-            in
-            ( { newModel
+            ( { model
                 | input = ""
                 , history = model.history ++ [ cmd ]
               }
             , [ tarminalJumpToBotton "tarminal"
-              , newModel.directory
+              , model.directory
                     |> Zipper.getTree
                     |> Dir.dismantlers
                     |> Dir.encoder
@@ -63,7 +47,7 @@ update msg model =
             )
 
         Clear ->
-            ( { model | history = [], input = "", view = [] }
+            ( { model | history = [], input = "", rowCmds = [] }
             , Cmd.none
             )
 
@@ -121,31 +105,7 @@ parseCommand str =
             cmd
 
         Err _ ->
-            Cmd.Error "" ""
-
-
-executeCommand : Command -> Model -> Result String Model
-executeCommand cmd model =
-    case cmd of
-        _ ->
-            Ok model
-
-
-display : Command -> Model -> Model
-display cmd model =
-    { model
-        | view =
-            model.view
-                ++ [ Html.div []
-                        [ Html.span []
-                            [ Dir.prompt model.directory
-                            , Cmd.commandToString cmd
-                                |> Html.text
-                            ]
-                        , Cmd.outputView cmd |> Html.map OnCommand
-                        ]
-                   ]
-    }
+            Cmd.Error str "Command is not found."
 
 
 tarminalJumpToBotton : String -> Cmd Msg

@@ -1,5 +1,6 @@
 module View exposing (view)
 
+import Command exposing (Command(..))
 import Directory as Dir exposing (Directory(..))
 import Html exposing (..)
 import Html.Attributes as Attr
@@ -26,13 +27,16 @@ view model =
             , Attr.style "left" <| (px << String.fromFloat << Tuple.first) model.windowPos
             , Attr.style "top" <| (px << String.fromFloat << Tuple.second) model.windowPos
             ]
-            [ header
-            , div
-                [ Attr.id "tarminal" ]
-                [ div [] model.view
-                , stdin model.caret model.input model.directory
-                ]
-            ]
+          <|
+            [ header ]
+                ++ (history <|
+                        List.map2 Tuple.pair model.rowCmds model.history
+                   )
+                ++ [ div
+                        [ Attr.id "tarminal" ]
+                        [ stdin model.caret model.input model.directory
+                        ]
+                   ]
         ]
 
 
@@ -46,6 +50,21 @@ header =
         [ span [] []
         , span [] []
         , span [] []
+        ]
+
+
+history : List ( String, Command ) -> List (Html Msg)
+history =
+    List.map historyView
+
+
+historyView : ( String, Command ) -> Html Msg
+historyView ( row, cmd ) =
+    div
+        []
+        [ pre [] [ text row ]
+        , Command.view cmd
+            |> Html.map OnCommand
         ]
 
 

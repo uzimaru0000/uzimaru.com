@@ -12,8 +12,8 @@ import Task
 
 type alias Model =
     { input : String
+    , rowCmds : List String
     , history : List Command
-    , view : List (Html Msg)
     , caret : Bool
     , directory : Zipper Directory
     , isClickHeader : Bool
@@ -54,8 +54,8 @@ initDirectory =
 init : JD.Value -> ( Model, Cmd Msg )
 init value =
     ( { input = ""
+      , rowCmds = []
       , history = []
-      , view = []
       , caret = True
       , directory =
             value
@@ -67,7 +67,6 @@ init value =
       , windowPos = ( 0, 0 )
       }
     , [ Task.attempt (\_ -> NoOp) <| Dom.focus "prompt"
-      , Task.perform identity (Task.succeed <| OnCommand (Help <| HelpCmd.Help { command = Nothing }))
       , Task.attempt GetWindow <| Dom.getElement "window"
       ]
         |> Cmd.batch

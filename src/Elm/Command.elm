@@ -6,8 +6,8 @@ module Command exposing
     , help
     , links
     , list
-    , outputView
     , parser
+    , view
     , whoami
     , work
     )
@@ -186,11 +186,20 @@ commandToString cmd =
             "TODO"
 
 
-outputView : Command -> Html Command
-outputView cmd =
+view : Command -> Html Command
+view cmd =
     case cmd of
         Help helpCmd ->
             help helpCmd
+
+        Work workCmd ->
+            work
+
+        WhoAmI whoamiCmd ->
+            whoami
+
+        Link linkCmd ->
+            links
 
         _ ->
             text ""
