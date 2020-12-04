@@ -16,7 +16,10 @@
     "elm-hot": "^1.1.4",
     "elm-test": "^0.19.1",
     "parcel-bundler": "^1.12.4",
-    "sass": "^1.26.5"
+    "sass": "^1.26.5",
+    "typescript": "^4.1.2"
   },
-  "dependencies": {}
+  "dependencies": {
+    "lit-element": "^2.4.0"
+  }
 }

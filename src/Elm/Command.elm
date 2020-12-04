@@ -1,15 +1,11 @@
 module Command exposing
     ( Command(..)
-    , commandToString
-    , createList
+    , Error(..)
     , dirItem
-    , help
-    , links
     , list
     , parser
     , view
-    , whoami
-    , work
+    , run
     )
 
 import Command.Help as HelpCmd
@@ -20,10 +16,10 @@ import Directory as Dir exposing (Directory(..))
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Ev
-import Icon exposing (icon)
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import Parser exposing ((|.), (|=), Parser)
 import Set
+import Dict
 
 
 type CommandTag
@@ -34,8 +30,9 @@ type CommandTag
 
 
 type Command
-    = Error String String
-    | Help (HelpCmd.Help CommandTag)
+    = CmdErr Error 
+    | None
+    | Help HelpCmd.Help
     | WhoAmI WhoAmICmd.WhoAmI
     | Work WorkCmd.Work
     | Link LinkCmd.Link
@@ -49,21 +46,21 @@ type Command
 -- | Remove
 
 
-type CDError
+type Error
     = NotExist
     | TargetIsFile
+    | UnknownCommand String
 
 
 parser : Parser Command
 parser =
     Parser.oneOf
-        [ HelpCmd.parser strToCmd |> Parser.map Help
+        [ Parser.succeed None
+            |. Parser.end
+        , HelpCmd.parser |> Parser.map Help
         , WhoAmICmd.parser |> Parser.map WhoAmI
         , WorkCmd.parser |> Parser.map Work
         , LinkCmd.parser |> Parser.map Link
-        , Parser.succeed Error
-            |= anyString
-            |= Parser.succeed ""
         ]
 
 
@@ -85,6 +82,14 @@ strToCmd str =
         _ ->
             Nothing
 
+
+cmdToStr : CommandTag -> String
+cmdToStr cmd =
+    case cmd of
+        Help_ -> "help"
+        WhoAmI_ -> "whoami"
+        Link_ -> "link"
+        Work_ -> "work"
 
 
 -- remove : Args -> Zipper Directory -> Result String (Zipper Directory)
@@ -136,159 +141,135 @@ strToCmd str =
 --             Ok <| Zipper.root dir
 
 
-changeDirHelper : List String -> Zipper Directory -> Result CDError (Zipper Directory)
-changeDirHelper path dir =
-    case path of
-        ".." :: tail ->
-            dir
-                |> Zipper.up
-                |> Result.fromMaybe NotExist
-                |> Result.andThen (changeDirHelper tail)
+-- changeDirHelper : List String -> Zipper Directory -> Result CDError (Zipper Directory)
+-- changeDirHelper path dir =
+--     case path of
+--         ".." :: tail ->
+--             dir
+--                 |> Zipper.up
+--                 |> Result.fromMaybe NotExist
+--                 |> Result.andThen (changeDirHelper tail)
 
-        "." :: tail ->
-            changeDirHelper tail dir
+--         "." :: tail ->
+--             changeDirHelper tail dir
 
-        head :: tail ->
-            dir
-                |> Zipper.open
-                    (\x ->
-                        case x of
-                            Directory { name } _ ->
-                                name == head
+--         head :: tail ->
+--             dir
+--                 |> Zipper.open
+--                     (\x ->
+--                         case x of
+--                             Directory { name } _ ->
+--                                 name == head
 
-                            File _ ->
-                                False
-                    )
-                |> Result.fromMaybe
-                    (case Zipper.open (Dir.getName >> (==) head) dir |> Maybe.map Zipper.current of
-                        Just (File _) ->
-                            TargetIsFile
+--                             File _ ->
+--                                 False
+--                     )
+--                 |> Result.fromMaybe
+--                     (case Zipper.open (Dir.getName >> (==) head) dir |> Maybe.map Zipper.current of
+--                         Just (File _) ->
+--                             TargetIsFile
 
-                        Nothing ->
-                            NotExist
+--                         Nothing ->
+--                             NotExist
 
-                        _ ->
-                            NotExist
-                    )
-                |> Result.andThen (changeDirHelper tail)
+--                         _ ->
+--                             NotExist
+--                     )
+--                 |> Result.andThen (changeDirHelper tail)
 
-        [] ->
-            Ok dir
+--         [] ->
+--             Ok dir
 
 
-commandToString : Command -> String
-commandToString cmd =
+run : Command -> Cmd msg
+run cmd =
     case cmd of
-        Error c _ ->
-            c
+        Link linkCmd ->
+            LinkCmd.run
+                linkCmd
+                (Dict.fromList
+                    [ ( "GitHub", "https://github.com/uzimaru0000" )
+                    , ( "Twitter", "https://twitter.com/uzimaru0000" )
+                    , ( "Facebook", "https://www.facebook.com/shuji.oba.1" )
+                    , ( "zenn", "https://zenn.dev/uzimaru0000" )
+                    , ( "Blog", "http://blog.uzimaru.com" )
+                    ]
+                )
+
+        Work workCmd ->
+            WorkCmd.run
+                workCmd
+                (Dict.fromList
+                    [ ( "WeatherApp", ("WeatherApp made by Elm.", "https://uzimaru0000.github.io/elm-weather-app") )
+                    , ( "UniTEA", ("Implementation of The Elm Architecture for Unity3D", "https://github.com/uzimaru0000/UniTEA") )
+                    , ( "TabClock", ("Chrome extension to display clock on NewTab", "https://github.com/uzimaru0000/TabClock") )
+                    , ( "VR", ("Summary made with VR.", "https://twitter.com/i/moments/912461981851860992") )
+                    ]
+                )
 
         _ ->
-            "TODO"
+            Cmd.none
 
 
 view : Command -> Html Command
 view cmd =
     case cmd of
         Help helpCmd ->
-            help helpCmd
+            HelpCmd.view
+                "Welcome to the uzimaru's portfolio site!!"
+                "[Basic commands]"
+                [ HelpCmd.info
+                , WhoAmICmd.info
+                , WorkCmd.info
+                , LinkCmd.info
+                ]
 
         Work workCmd ->
-            work
+            WorkCmd.view
+                workCmd
+                (Dict.fromList
+                    [ ( "WeatherApp", ("WeatherApp made by Elm.", "https://uzimaru0000.github.io/elm-weather-app") )
+                    , ( "UniTEA", ("Implementation of The Elm Architecture for Unity3D", "https://github.com/uzimaru0000/UniTEA") )
+                    , ( "TabClock", ("Chrome extension to display clock on NewTab", "https://github.com/uzimaru0000/TabClock") )
+                    , ( "VR", ("Summary made with VR.", "https://twitter.com/i/moments/912461981851860992") )
+                    ]
+                )
 
         WhoAmI whoamiCmd ->
-            whoami
+            WhoAmICmd.view
+                whoamiCmd
+                [ ( "Name", "Shuji Oba (uzimaru)" )
+                , ( "Age", "21" )
+                , ( "Hobby", "Cooking, Programming" )
+                , ( "Likes", "Unity, Elm, Golang" )
+                ]
 
         Link linkCmd ->
-            links
+            LinkCmd.view 
+                linkCmd
+                (Dict.fromList
+                    [ ( "GitHub", "https://github.com/uzimaru0000" )
+                    , ( "Twitter", "https://twitter.com/uzimaru0000" )
+                    , ( "Facebook", "https://www.facebook.com/shuji.oba.1" )
+                    , ( "zenn", "https://zenn.dev/uzimaru0000" )
+                    , ( "Blog", "http://blog.uzimaru.com" )
+                    ]
+                )
 
-        _ ->
-            text ""
-
-
-createList : ( String, String ) -> Html msg
-createList ( a, b ) =
-    li []
-        [ span [] [ text a ]
-        , span [] [ text b ]
-        ]
-
-
-help : HelpCmd.Help CommandTag -> Html Command
-help (HelpCmd.Help args) =
-    div [ Attr.class "help" ]
-        [ case args.command of
-            Just cmd ->
-                case cmd of
+        CmdErr err ->
+            Html.div []
+                [ case err of
+                    UnknownCommand str ->
+                        [ "Unknown command:", str ] 
+                            |> String.join " "
+                            |> Html.text
+                    
                     _ ->
-                        HelpCmd.help
+                        Html.text "error"
+                ]
 
-            _ ->
-                HelpCmd.help
-        ]
-
-
-whoami : Html Command
-whoami =
-    let
-        info =
-            [ ( "Name", "Shuji Oba (uzimaru)" )
-            , ( "Age", "22" )
-            , ( "Hobby", "Cooking, Programming" )
-            , ( "Likes", "Unity, Elm, Golang" )
-            ]
-    in
-    div [ Attr.class "whoami" ]
-        [ figure [] [ icon ]
-        , info
-            |> List.map createList
-            |> ul [ Attr.class "list" ]
-        ]
-
-
-work : Html Command
-work =
-    let
-        info =
-            [ ( "WeatherApp", "WeatherApp made by Elm.", "https://uzimaru0000.github.io/elm-weather-app" )
-            , ( "UniTEA", "Implementation of The Elm Architecture for Unity3D", "https://github.com/uzimaru0000/UniTEA" )
-            , ( "TabClock", "Chrome extension to display clock on NewTab", "https://github.com/uzimaru0000/TabClock" )
-            , ( "VR", "Summary made with VR.", "https://twitter.com/i/moments/912461981851860992" )
-            ]
-    in
-    div [ Attr.class "work" ]
-        [ info
-            |> List.map
-                (\( title, subTitle, url ) ->
-                    li []
-                        [ a [ Attr.href url, Attr.target "_blink" ] [ text title ]
-                        , span [] [ text subTitle ]
-                        ]
-                )
-            |> ul [ Attr.class "list" ]
-        ]
-
-
-links : Html Command
-links =
-    let
-        info =
-            [ ( "GitHub", "https://github.com/uzimaru0000" )
-            , ( "Twitter", "https://twitter.com/uzimaru0000" )
-            , ( "Facebook", "https://www.facebook.com/shuji.oba.1" )
-            , ( "Qiita", "https://qiita.com/uzimaru0000" )
-            , ( "Blog", "http://blog.uzimaru.com" )
-            ]
-    in
-    div [ Attr.class "links" ]
-        [ info
-            |> List.map
-                (\( title, url ) ->
-                    li []
-                        [ a [ Attr.href url, Attr.target "_blink" ] [ text title ]
-                        ]
-                )
-            |> ul [ Attr.class "list" ]
-        ]
+        None ->
+            Html.text ""
 
 
 list : Zipper Directory -> Html Command

@@ -1,4 +1,4 @@
-module Directory exposing (Directory(..), Info, builder, decoder, dismantlers, encoder, getName, prompt)
+module Directory exposing (Directory(..), Info, builder, decoder, dismantlers, encoder, getName, pwd)
 
 import Html exposing (..)
 import Json.Decode as JD
@@ -60,21 +60,9 @@ getName dir =
         File { name } ->
             name
 
-
-prompt : Zipper Directory -> Html msg
-prompt dir =
-    span []
-        [ [ "[ "
-          , dir
-                |> Zipper.getPath getName
-                |> String.join "/"
-          , " ]"
-          , " $ "
-          ]
-            |> String.join ""
-            |> text
-        ]
-
+pwd : Zipper Directory -> String
+pwd =
+    Zipper.getPath getName >> String.join "/"
 
 infoDecoder : JD.Decoder Info
 infoDecoder =

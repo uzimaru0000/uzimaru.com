@@ -1,43 +1,64 @@
 module Command.Help exposing
-    ( Args
-    , Help(..)
-    , help
+    ( Help(..)
+    , HelpInfo(..)
+    , view
+    , viewHelper
+    , info
     , parser
     )
 
 import Html exposing (Html)
+import Html.Attributes as Attr
 import Parser exposing ((|.), (|=), Parser)
 import Utils
+import Dict exposing (Dict)
 
 
-type Help cmd
-    = Help (Args cmd)
+type Help
+    = Help
 
 
-type alias Args cmd =
-    { command : Maybe cmd }
+type HelpInfo =
+    HelpInfo
+        { name : String
+        , info : String
+        , detailInfo : List HelpInfo
+        }
 
 
-parser : (String -> Maybe cmd) -> Parser (Help cmd)
-parser fn =
+parser : Parser Help
+parser =
     Parser.succeed Help
-        |. Utils.iToken "help"
+        |. Parser.keyword "help"
         |. Parser.spaces
-        |= argsParser fn { command = Nothing }
 
 
-argsParser : (String -> Maybe cmd) -> Args cmd -> Parser (Args cmd)
-argsParser fn =
-    Utils.argsParser <|
-        \default ->
-            Parser.oneOf
-                [ Parser.succeed (\str -> { default | command = (String.toLower >> fn) str })
-                    |= Utils.anyString
-                    |. Parser.spaces
-                ]
+info : HelpInfo
+info =
+    HelpInfo
+        { name = "help"
+        , info = "Show how to use the command."
+        , detailInfo = []
+        }
 
 
-help : Html msg
-help =
-    Html.div []
-        [ Html.text "this is HelpCommand help message" ]
+view : String -> String -> List HelpInfo -> Html msg
+view message label infos =
+    Html.div [ Attr.class "help" ]
+        [ Html.div [ Attr.class "message" ]
+            [ Html.text message ]
+        , Html.div []
+            [ Html.text label ]
+        , Html.div [ Attr.class "detail" ]
+            ( infos
+                |> List.map viewHelper
+            )
+        ]
+
+viewHelper : HelpInfo -> Html msg
+viewHelper (HelpInfo i) =
+    Html.div
+        [ Attr.class "description" ]
+        [ Html.div [] [ Html.text i.name ]
+        , Html.div [ Attr.class "info" ] [ Html.text i.info ]
+        ]

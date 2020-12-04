@@ -29,14 +29,18 @@ update msg model =
                 |> OnCommand
                 |> update
             )
-                { model | rowCmds = model.rowCmds ++ [ model.input ] }
+                model
 
         OnCommand cmd ->
             ( { model
                 | input = ""
-                , history = model.history ++ [ cmd ]
+                , history =
+                    model.history
+                        ++ [ History (Dir.pwd model.directory) model.input cmd ]
               }
             , [ tarminalJumpToBotton "tarminal"
+              , focus
+              , Cmd.run cmd
               , model.directory
                     |> Zipper.getTree
                     |> Dir.dismantlers
@@ -46,53 +50,26 @@ update msg model =
                 |> Cmd.batch
             )
 
-        Clear ->
-            ( { model | history = [], input = "", rowCmds = [] }
+        PrevCommand ->
+            let
+                prevCmd = List.head model.history
+            in
+            ( { model
+                | input =
+                    prevCmd
+                        |> Maybe.map (\(History _ str _) -> str)
+                        |> Maybe.withDefault ""
+              }
             , Cmd.none
             )
 
-        Tick ->
-            ( { model | caret = not model.caret }
-            , Cmd.none
+        Clear ->
+            ( { model | history = [], input = "" }
+            , focus
             )
 
         Focus ->
-            ( model
-            , Task.attempt (\_ -> NoOp) <| Browser.Dom.focus "prompt"
-            )
-
-        GetWindow (Ok { element, viewport }) ->
-            let
-                x =
-                    (viewport.width - element.width) / 2
-
-                y =
-                    (viewport.height - element.height) / 2
-            in
-            ( { model | windowPos = ( x, y ) }
-            , Cmd.none
-            )
-
-        ClickHeader isClick ->
-            ( { model
-                | isClickHeader = isClick
-              }
-            , Cmd.none
-            )
-
-        MoveMouse ( moveX, moveY ) ->
-            let
-                x =
-                    Tuple.first model.windowPos
-
-                y =
-                    Tuple.second model.windowPos
-            in
-            ( { model
-                | windowPos = ( x + moveX, y + moveY )
-              }
-            , Cmd.none
-            )
+            (model, focus)
 
         _ ->
             ( model, Cmd.none )
@@ -105,7 +82,7 @@ parseCommand str =
             cmd
 
         Err _ ->
-            Cmd.Error str "Command is not found."
+            Cmd.CmdErr <| Cmd.UnknownCommand str 
 
 
 tarminalJumpToBotton : String -> Cmd Msg
@@ -113,3 +90,7 @@ tarminalJumpToBotton id =
     Browser.Dom.getViewportOf id
         |> Task.andThen (\info -> Browser.Dom.setViewportOf id 0 info.scene.height)
         |> Task.attempt (\_ -> NoOp)
+
+focus : Cmd Msg
+focus =
+    Task.attempt (\_ -> NoOp) <| Browser.Dom.focus "prompt"

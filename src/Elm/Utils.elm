@@ -1,31 +1,13 @@
 module Utils exposing
     ( anyString
     , argsParser
-    , iToken
     , optionParser
+    , createList
     )
 
 import Parser exposing ((|.), Parser)
 import Set
-
-
-iToken : String -> Parser ()
-iToken token =
-    Parser.backtrackable (Parser.loop token iTokenHelp)
-
-
-iTokenHelp : String -> Parser (Parser.Step String ())
-iTokenHelp chars =
-    case String.uncons chars of
-        Just ( char, remainingChars ) ->
-            Parser.oneOf
-                [ Parser.succeed (Parser.Loop remainingChars)
-                    |. Parser.chompIf (\c -> Char.toLower c == char)
-                , Parser.problem ("Expected case insensitive \"" ++ chars ++ "\"")
-                ]
-
-        Nothing ->
-            Parser.succeed <| Parser.Done ()
+import Html exposing (Html)
 
 
 anyString : Parser String
@@ -49,10 +31,11 @@ argsParser argParser default =
 
 optionParser : String -> String -> Parser ()
 optionParser shortOpt longOpt =
-    Parser.oneOf
-        [ longOptionParser longOpt
-        , shortOptionParser shortOpt
-        ]
+    Parser.backtrackable <|
+        Parser.oneOf
+            [ longOptionParser longOpt
+            , shortOptionParser shortOpt
+            ]
 
 
 shortOptionParser : String -> Parser ()
@@ -67,3 +50,10 @@ longOptionParser opt =
     Parser.succeed ()
         |. Parser.symbol "--"
         |. Parser.keyword opt
+
+createList : ( String, String ) -> Html msg
+createList ( a, b ) =
+    Html.li []
+        [ Html.span [] [ Html.text a ]
+        , Html.span [] [ Html.text b ]
+        ]

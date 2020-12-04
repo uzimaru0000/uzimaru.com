@@ -1,4 +1,4 @@
-module Model exposing (Model, Msg(..), init)
+module Model exposing (Model, Msg(..), History(..), init)
 
 import Browser.Dom as Dom
 import Command exposing (..)
@@ -10,28 +10,24 @@ import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import Task
 
 
+type History = History String String Command
+
 type alias Model =
     { input : String
-    , rowCmds : List String
-    , history : List Command
-    , caret : Bool
+    , history : List History
     , directory : Zipper Directory
-    , isClickHeader : Bool
-    , windowPos : ( Float, Float )
     }
 
 
 type Msg
     = NoOp
-    | Tick
     | OnInput String
     | OnEnter
     | OnCommand Command
-    | Focus
+    | PrevCommand
     | Clear
-    | GetWindow (Result Dom.Error Dom.Element)
+    | Focus
     | ClickHeader Bool
-    | MoveMouse ( Float, Float )
 
 
 initDirectory : Directory
@@ -54,20 +50,13 @@ initDirectory =
 init : JD.Value -> ( Model, Cmd Msg )
 init value =
     ( { input = ""
-      , rowCmds = []
-      , history = []
-      , caret = True
+      , history = [ History "/" "help" (Help <| HelpCmd.Help) ]
       , directory =
             value
                 |> JD.decodeValue Dir.decoder
                 |> Result.withDefault initDirectory
                 |> Dir.builder
                 |> Zipper.fromTree
-      , isClickHeader = False
-      , windowPos = ( 0, 0 )
       }
-    , [ Task.attempt (\_ -> NoOp) <| Dom.focus "prompt"
-      , Task.attempt GetWindow <| Dom.getElement "window"
-      ]
-        |> Cmd.batch
+    , Task.attempt (\_ -> NoOp) <| Dom.focus "prompt"
     )

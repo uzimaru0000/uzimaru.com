@@ -6,8 +6,9 @@ import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Ev
 import Json.Decode as JD
-import Lazy.Tree.Zipper exposing (Zipper)
+import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import Model exposing (..)
+import CustomElement exposing (..)
 
 
 
@@ -23,59 +24,60 @@ view : Model -> Html Msg
 view model =
     div [ Attr.id "wrapper" ]
         [ div
-            [ Attr.id "window"
-            , Attr.style "left" <| (px << String.fromFloat << Tuple.first) model.windowPos
-            , Attr.style "top" <| (px << String.fromFloat << Tuple.second) model.windowPos
-            ]
-          <|
-            [ header ]
-                ++ (history <|
-                        List.map2 Tuple.pair model.rowCmds model.history
-                   )
-                ++ [ div
-                        [ Attr.id "tarminal" ]
-                        [ stdin model.caret model.input model.directory
-                        ]
-                   ]
+            [ Attr.id "window" ]
+                [ header
+                , div
+                    [ Attr.id "tarminal" ] <|
+                    (history model.history) ++ [ stdin model.input model.directory ]
+                ]
         ]
 
 
 header : Html Msg
 header =
     div
-        [ Attr.id "header"
-        , Ev.onMouseDown <| ClickHeader True
-        , Ev.onMouseUp <| ClickHeader False
-        ]
+        [ Attr.id "header" ]
         [ span [] []
         , span [] []
         , span [] []
         ]
 
 
-history : List ( String, Command ) -> List (Html Msg)
+history : List History -> List (Html Msg)
 history =
-    List.map historyView
+    List.map
+        (\(History dir raw cmd) ->
+            div
+                []
+                [ prompt dir
+                , span [] [ text raw ]
+                , Command.view cmd
+                    |> Html.map OnCommand
+                ]
+        )
 
-
-historyView : ( String, Command ) -> Html Msg
-historyView ( row, cmd ) =
-    div
-        []
-        [ pre [] [ text row ]
-        , Command.view cmd
-            |> Html.map OnCommand
+prompt : String -> Html msg
+prompt dir =
+    span []
+        [ [ "[ "
+          , dir 
+          , " ]"
+          , " $ "
+          ]
+            |> String.join ""
+            |> text
         ]
 
 
-stdin : Bool -> String -> Zipper Directory -> Html Msg
-stdin caret val dir =
+stdin : String -> Zipper Directory -> Html Msg
+stdin val dir =
     div []
-        [ Dir.prompt dir
-        , input
-            [ Attr.id "prompt"
+        [ Dir.pwd dir 
+            |> prompt
+        , terminalInput
+            [ Attr.value val
             , Ev.onInput OnInput
-            , Attr.value val
+            , Attr.id "prompt"
             , onKeyDownWithCtrl
                 (\ctrl code ->
                     case ( ctrl, code ) of
@@ -85,20 +87,13 @@ stdin caret val dir =
                         ( _, 13 ) ->
                             JD.succeed OnEnter
 
+                        ( _, 38 ) ->
+                            JD.succeed PrevCommand
+
                         _ ->
                             JD.fail "not matching"
                 )
-            ]
-            []
-        , pre [] [ text val ]
-        , span []
-            [ text <|
-                if caret then
-                    "|"
-
-                else
-                    ""
-            ]
+            ] []
         ]
 
 
