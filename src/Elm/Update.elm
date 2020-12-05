@@ -59,7 +59,10 @@ update msg model =
 
         PrevCommand ->
             let
-                prevCmd = List.head model.history
+                prevCmd =
+                    model.history
+                        |> List.reverse
+                        |> List.head
             in
             ( { model
                 | input =
@@ -71,7 +74,7 @@ update msg model =
             )
 
         Clear ->
-            ( { model | history = [], input = "" }
+            ( { model | history = [] }
             , focus
             )
 
