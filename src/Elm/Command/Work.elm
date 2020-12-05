@@ -77,7 +77,8 @@ run (Work args) urlDict =
             |> Maybe.map (\(_, url) -> Port.openExternalLink url)
             |> Maybe.withDefault Cmd.none
     else
-        Cmd.none        
+        Cmd.none
+        
 
 view : Work -> Dict String (String, String) -> Html msg
 view (Work args) links =

@@ -1,7 +1,5 @@
 module Command exposing
     ( Command(..)
-    , dirItem
-    , list
     , parser
     , view
     , run
@@ -118,6 +116,8 @@ run cmd dir =
                     , ( "UniTEA", ("Implementation of The Elm Architecture for Unity3D", "https://github.com/uzimaru0000/UniTEA") )
                     , ( "TabClock", ("Chrome extension to display clock on NewTab", "https://github.com/uzimaru0000/TabClock") )
                     , ( "VR", ("Summary made with VR.", "https://twitter.com/i/moments/912461981851860992") )
+                    , ( "Splash", ("Applications that simulate ink splash", "https://splash.uzimaru.com/"))
+                    , ( "clumsy", ("Clone of git implemented in rust.", "https://github.com/uzimaru0000/clumsy"))
                     ]
                 )
             )
@@ -208,26 +208,3 @@ view cmd directory =
         None ->
             Html.text ""
 
-
-list : Zipper Directory -> Html Command
-list dir =
-    div [ Attr.class "ls" ]
-        [ dir
-            |> Zipper.children
-            |> List.map dirItem
-            |> ul []
-        ]
-
-
-dirItem : Directory -> Html Command
-dirItem dir =
-    case dir of
-        Directory { name } _ ->
-            li
-                [ Attr.class "directory" ]
-                [ text <| name ++ "/" ]
-
-        File { name } ->
-            li
-                [ Attr.class "file" ]
-                [ text name ]

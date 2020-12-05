@@ -34,7 +34,7 @@ update msg model =
 
         OnCommand cmd ->
             Cmd.run cmd model.directory
-                |> (\(result, c) ->
+                |> (\(result, effect) ->
                     let
                         dir = Result.withDefault model.directory result
                         cmd_ =
@@ -51,7 +51,7 @@ update msg model =
                     }
                     , [ tarminalJumpToBotton "tarminal"
                       , focus
-                      , c
+                      , effect
                       ]
                           |> Cmd.batch
                     )
