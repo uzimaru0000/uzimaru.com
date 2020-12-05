@@ -159,6 +159,8 @@ view cmd directory =
                     , ( "UniTEA", ("Implementation of The Elm Architecture for Unity3D", "https://github.com/uzimaru0000/UniTEA") )
                     , ( "TabClock", ("Chrome extension to display clock on NewTab", "https://github.com/uzimaru0000/TabClock") )
                     , ( "VR", ("Summary made with VR.", "https://twitter.com/i/moments/912461981851860992") )
+                    , ( "Splash", ("Applications that simulate ink splash", "https://splash.uzimaru.com/"))
+                    , ( "clumsy", ("Clone of git implemented in rust.", "https://github.com/uzimaru0000/clumsy"))
                     ]
                 )
 
@@ -166,9 +168,9 @@ view cmd directory =
             WhoAmICmd.view
                 whoamiCmd
                 [ ( "Name", "Shuji Oba (uzimaru)" )
-                , ( "Age", "21" )
+                , ( "Age", "22" )
                 , ( "Hobby", "Cooking, Programming" )
-                , ( "Likes", "Unity, Elm, Golang" )
+                , ( "Likes", "WebFrontend, Elm, Rust" )
                 ]
 
         Link linkCmd ->
