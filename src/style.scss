@@ -13,16 +13,18 @@ body {
   color: $text-color;
   font-family: 'Press Start 2P', cursive;
   font-size: 16px;
+  line-height: 1.25rem;
 }
 
 #wrapper {
-  position: relative;
   height: 100vh;
   animation: show 1s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 #window {
-  position: absolute;
   width: 80%;
   height: 80%;
 }
@@ -37,7 +39,6 @@ body {
 }
 
 #header {
-  height: $header-height;
   background: rgb(87, 87, 87);
   z-index: 100;
   box-shadow: 0 0 5px 0px rgba(0, 0, 0, 0.5);
@@ -61,19 +62,26 @@ body {
   }
 }
 
-#prompt {
-  opacity: 0;
-  position: absolute;
-}
+.help {
+  padding: 2rem;
 
-pre {
-  display: inline;
-  font-family: 'Press Start 2P', cursive;
-}
+  .message {
+    margin-bottom: 2rem;
+  }
 
-.command {
-  font-family: 'Press Start 2P', cursive;
-  font-size: 16px;
+  & .detail {
+    padding-left: 2rem;
+  }
+
+  & .description {
+    .info {
+      padding-left: 2rem;
+    }
+
+    &:not(:last-child) {
+      margin-bottom: 1rem;
+    }
+  }
 }
 
 ul.list li {

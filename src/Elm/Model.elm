@@ -1,7 +1,8 @@
-module Model exposing (Model, Msg(..), init)
+module Model exposing (Model, Msg(..), History(..), init)
 
 import Browser.Dom as Dom
 import Command exposing (..)
+import Command.Help as HelpCmd
 import Directory as Dir exposing (Directory(..))
 import Html exposing (Html)
 import Json.Decode as JD
@@ -9,33 +10,29 @@ import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import Task
 
 
+type History = History (Zipper Directory) String Command
+
 type alias Model =
     { input : String
-    , history : List Commands
-    , view : List (Html Msg)
-    , caret : Bool
+    , history : List History
     , directory : Zipper Directory
-    , isClickHeader : Bool
-    , windowPos : ( Float, Float )
     }
 
 
 type Msg
     = NoOp
-    | Tick
     | OnInput String
     | OnEnter
-    | OnCommand Commands
-    | Focus
+    | OnCommand Command
+    | PrevCommand
     | Clear
-    | GetWindow (Result Dom.Error Dom.Element)
+    | Focus
     | ClickHeader Bool
-    | MoveMouse ( Float, Float )
 
 
 initDirectory : Directory
 initDirectory =
-    Directory { name = "/" }
+    Directory { name = "~" }
         [ Directory { name = "bin" }
             [ File { name = "elm" }
             ]
@@ -52,22 +49,17 @@ initDirectory =
 
 init : JD.Value -> ( Model, Cmd Msg )
 init value =
-    ( { input = ""
-      , history = []
-      , view = []
-      , caret = True
-      , directory =
+    let
+        initDir =
             value
                 |> JD.decodeValue Dir.decoder
                 |> Result.withDefault initDirectory
                 |> Dir.builder
                 |> Zipper.fromTree
-      , isClickHeader = False
-      , windowPos = ( 0, 0 )
+    in
+    ( { input = ""
+      , history = [ History initDir "help" (Help <| HelpCmd.Help) ]
+      , directory = initDir
       }
-    , [ Task.attempt (\_ -> NoOp) <| Dom.focus "prompt"
-      , Task.perform identity (Task.succeed <| OnCommand ( Help, [] ))
-      , Task.attempt GetWindow <| Dom.getElement "window"
-      ]
-        |> Cmd.batch
+    , Task.attempt (\_ -> NoOp) <| Dom.focus "prompt"
     )
