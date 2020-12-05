@@ -10,7 +10,7 @@ import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import Task
 
 
-type History = History String String Command
+type History = History (Zipper Directory) String Command
 
 type alias Model =
     { input : String
@@ -32,7 +32,7 @@ type Msg
 
 initDirectory : Directory
 initDirectory =
-    Directory { name = "/" }
+    Directory { name = "~" }
         [ Directory { name = "bin" }
             [ File { name = "elm" }
             ]
@@ -49,14 +49,17 @@ initDirectory =
 
 init : JD.Value -> ( Model, Cmd Msg )
 init value =
-    ( { input = ""
-      , history = [ History "/" "help" (Help <| HelpCmd.Help) ]
-      , directory =
+    let
+        initDir =
             value
                 |> JD.decodeValue Dir.decoder
                 |> Result.withDefault initDirectory
                 |> Dir.builder
                 |> Zipper.fromTree
+    in
+    ( { input = ""
+      , history = [ History initDir "help" (Help <| HelpCmd.Help) ]
+      , directory = initDir
       }
     , Task.attempt (\_ -> NoOp) <| Dom.focus "prompt"
     )

@@ -49,9 +49,9 @@ history =
         (\(History dir raw cmd) ->
             div
                 []
-                [ prompt dir
+                [ prompt <| Dir.pwd dir
                 , span [] [ text raw ]
-                , Command.view cmd
+                , Command.view cmd dir
                     |> Html.map OnCommand
                 ]
         )

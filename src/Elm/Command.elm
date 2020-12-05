@@ -1,6 +1,5 @@
 module Command exposing
     ( Command(..)
-    , Error(..)
     , dirItem
     , list
     , parser
@@ -12,6 +11,11 @@ import Command.Help as HelpCmd
 import Command.Link as LinkCmd
 import Command.WhoAmI as WhoAmICmd
 import Command.Work as WorkCmd
+import Command.List as ListCmd
+import Command.ChangeDir as ChangeDirCmd
+import Command.MakeDir as MakeDirCmd
+import Command.Touch as TouchCmd
+import Command.Remove as RemoveCmd
 import Directory as Dir exposing (Directory(..))
 import Html exposing (..)
 import Html.Attributes as Attr
@@ -30,26 +34,17 @@ type CommandTag
 
 
 type Command
-    = CmdErr Error 
+    = CmdErr String
     | None
     | Help HelpCmd.Help
     | WhoAmI WhoAmICmd.WhoAmI
     | Work WorkCmd.Work
     | Link LinkCmd.Link
-
-
-
--- | List
--- | MakeDir
--- | Touch
--- | ChangeDir
--- | Remove
-
-
-type Error
-    = NotExist
-    | TargetIsFile
-    | UnknownCommand String
+    | List ListCmd.List
+    | ChangeDir ChangeDirCmd.ChangeDir
+    | MakeDir MakeDirCmd.MakeDir
+    | Touch TouchCmd.Touch
+    | Remove RemoveCmd.Remove
 
 
 parser : Parser Command
@@ -61,6 +56,11 @@ parser =
         , WhoAmICmd.parser |> Parser.map WhoAmI
         , WorkCmd.parser |> Parser.map Work
         , LinkCmd.parser |> Parser.map Link
+        , ListCmd.parser |> Parser.map List
+        , ChangeDirCmd.parser |> Parser.map ChangeDir
+        , MakeDirCmd.parser |> Parser.map MakeDir
+        , TouchCmd.parser |> Parser.map Touch
+        , RemoveCmd.parser |> Parser.map Remove
         ]
 
 
@@ -92,100 +92,12 @@ cmdToStr cmd =
         Work_ -> "work"
 
 
--- remove : Args -> Zipper Directory -> Result String (Zipper Directory)
--- remove args dir =
---     let
---         newDir =
---             case args of
---                 maybeOpt :: path :: _ ->
---                     case String.uncons maybeOpt of
---                         Just ( '-', "r" ) ->
---                             dir
---                                 |> Zipper.openPath (\p d -> p == Dir.getName d) (String.split "/" path)
---                                 |> Result.mapError (always "rm: No such file or directory")
---                         Just ( '-', opt ) ->
---                             Err <| "rm: illegal opiton -- " ++ opt
---                         _ ->
---                             Err <| "rm: invalid argument -- " ++ String.join " " args
---                 path :: _ ->
---                     dir
---                         |> Zipper.openPath (\p d -> p == Dir.getName d) (String.split "/" path)
---                         |> Result.mapError (always "rm: No such file or directory")
---                         |> Result.andThen
---                             (\d ->
---                                 case Zipper.current d of
---                                     Directory _ _ ->
---                                         Err <| "rm: " ++ path ++ ": is a directory"
---                                     File _ ->
---                                         Ok d
---                             )
---                 [] ->
---                     Err "usage: rm [-r] file"
---     in
---     newDir
---         |> Result.map (Zipper.attempt Zipper.delete)
--- changeDir : Args -> Zipper Directory -> Result String (Zipper Directory)
--- changeDir args dir =
---     case args of
---         path :: _ ->
---             changeDirHelper (String.split "/" path) dir
---                 |> Result.mapError
---                     (\x ->
---                         case x of
---                             NotExist ->
---                                 "cd: The directory '" ++ path ++ "' does not exist"
---                             TargetIsFile ->
---                                 "cd: '" ++ path ++ "' is not a directory"
---                     )
---         [] ->
---             Ok <| Zipper.root dir
-
-
--- changeDirHelper : List String -> Zipper Directory -> Result CDError (Zipper Directory)
--- changeDirHelper path dir =
---     case path of
---         ".." :: tail ->
---             dir
---                 |> Zipper.up
---                 |> Result.fromMaybe NotExist
---                 |> Result.andThen (changeDirHelper tail)
-
---         "." :: tail ->
---             changeDirHelper tail dir
-
---         head :: tail ->
---             dir
---                 |> Zipper.open
---                     (\x ->
---                         case x of
---                             Directory { name } _ ->
---                                 name == head
-
---                             File _ ->
---                                 False
---                     )
---                 |> Result.fromMaybe
---                     (case Zipper.open (Dir.getName >> (==) head) dir |> Maybe.map Zipper.current of
---                         Just (File _) ->
---                             TargetIsFile
-
---                         Nothing ->
---                             NotExist
-
---                         _ ->
---                             NotExist
---                     )
---                 |> Result.andThen (changeDirHelper tail)
-
---         [] ->
---             Ok dir
-
-
-run : Command -> Cmd msg
-run cmd =
+run : Command -> Zipper Directory -> (Result String (Zipper Directory), Cmd msg)
+run cmd dir =
     case cmd of
         Link linkCmd ->
-            LinkCmd.run
+            ( Ok dir
+            , LinkCmd.run
                 linkCmd
                 (Dict.fromList
                     [ ( "GitHub", "https://github.com/uzimaru0000" )
@@ -195,9 +107,11 @@ run cmd =
                     , ( "Blog", "http://blog.uzimaru.com" )
                     ]
                 )
+            )
 
         Work workCmd ->
-            WorkCmd.run
+            ( Ok dir
+            , WorkCmd.run
                 workCmd
                 (Dict.fromList
                     [ ( "WeatherApp", ("WeatherApp made by Elm.", "https://uzimaru0000.github.io/elm-weather-app") )
@@ -206,13 +120,26 @@ run cmd =
                     , ( "VR", ("Summary made with VR.", "https://twitter.com/i/moments/912461981851860992") )
                     ]
                 )
+            )
+        
+        ChangeDir changeDirCmd ->
+            (ChangeDirCmd.run changeDirCmd dir, Cmd.none)
+
+        MakeDir makeDirCmd ->
+            (MakeDirCmd.run makeDirCmd dir, Cmd.none)
+
+        Touch touchCmd ->
+            (TouchCmd.run touchCmd dir, Cmd.none)
+
+        Remove removeCmd ->
+            (RemoveCmd.run removeCmd dir, Cmd.none)
 
         _ ->
-            Cmd.none
+            (Ok dir, Cmd.none)
 
 
-view : Command -> Html Command
-view cmd =
+view : Command -> Zipper Directory -> Html Command
+view cmd directory =
     case cmd of
         Help helpCmd ->
             HelpCmd.view
@@ -256,17 +183,25 @@ view cmd =
                     ]
                 )
 
+        List listCmd ->
+            ListCmd.view
+                listCmd
+                directory
+
+        ChangeDir changeDirCmd ->
+            ChangeDirCmd.view
+
+        MakeDir makeDirCmd ->
+            MakeDirCmd.view makeDirCmd
+
+        Touch touchCmd ->
+            TouchCmd.view touchCmd
+
+        Remove removeCmd ->
+            RemoveCmd.view removeCmd
+
         CmdErr err ->
-            Html.div []
-                [ case err of
-                    UnknownCommand str ->
-                        [ "Unknown command:", str ] 
-                            |> String.join " "
-                            |> Html.text
-                    
-                    _ ->
-                        Html.text "error"
-                ]
+            Html.div [] [ Html.text err ]
 
         None ->
             Html.text ""

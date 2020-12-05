@@ -22,8 +22,8 @@ type alias Args =
 
 parser : Parser Work
 parser =
-    Parser.succeed (\_ -> Work)
-        |= Parser.keyword "work"
+    Parser.succeed Work
+        |. Parser.keyword "work"
         |. Parser.spaces
         |= argsParser { help = False, yes = False, param = Nothing } 
 
@@ -52,17 +52,17 @@ info =
         , info = "View a list of things I've made."
         , detailInfo =
             [ HelpInfo
-                { name = "<link name>"
+                { name = "[link name]"
                 , info = "The name of the link you want to open"
                 , detailInfo = []
                 }
             , HelpInfo
-                { name = "<--yes | -y>"
+                { name = "[--yes | -y]"
                 , info = "If this option is enabled, the specified link will be accessed automatically"
                 , detailInfo = []
                 }
             , HelpInfo
-                { name = "<--help | -h>"
+                { name = "[--help | -h]"
                 , info = "How to use this command"
                 , detailInfo = []
                 }

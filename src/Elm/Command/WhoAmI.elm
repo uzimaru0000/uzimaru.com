@@ -41,7 +41,7 @@ info =
         , info = "Show information about me."
         , detailInfo =
             [ HelpInfo
-                { name = "<--help | -h>"
+                { name = "[--help | -h]"
                 , info = "How to use this command"
                 , detailInfo = []
                 }

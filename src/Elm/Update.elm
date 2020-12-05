@@ -8,6 +8,7 @@ import LocalStorage as LS
 import Model exposing (..)
 import Parser
 import Task
+import Html.Attributes exposing (dir)
 
 
 
@@ -32,23 +33,29 @@ update msg model =
                 model
 
         OnCommand cmd ->
-            ( { model
-                | input = ""
-                , history =
-                    model.history
-                        ++ [ History (Dir.pwd model.directory) model.input cmd ]
-              }
-            , [ tarminalJumpToBotton "tarminal"
-              , focus
-              , Cmd.run cmd
-              , model.directory
-                    |> Zipper.getTree
-                    |> Dir.dismantlers
-                    |> Dir.encoder
-                    |> LS.store
-              ]
-                |> Cmd.batch
-            )
+            Cmd.run cmd model.directory
+                |> (\(result, c) ->
+                    let
+                        dir = Result.withDefault model.directory result
+                        cmd_ =
+                            case result of
+                                Ok _ -> cmd
+                                Err err -> Cmd.CmdErr err
+                    in
+                    ( { model
+                        | input = ""
+                        , directory = dir
+                        , history =
+                            model.history
+                                ++ [ History model.directory model.input cmd_ ]
+                    }
+                    , [ tarminalJumpToBotton "tarminal"
+                      , focus
+                      , c
+                      ]
+                          |> Cmd.batch
+                    )
+                   )
 
         PrevCommand ->
             let
@@ -82,7 +89,7 @@ parseCommand str =
             cmd
 
         Err _ ->
-            Cmd.CmdErr <| Cmd.UnknownCommand str 
+            Cmd.CmdErr <| "Unknown command: " ++ str 
 
 
 tarminalJumpToBotton : String -> Cmd Msg

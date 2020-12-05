@@ -1,4 +1,13 @@
-module Directory exposing (Directory(..), Info, builder, decoder, dismantlers, encoder, getName, pwd)
+module Directory exposing
+    ( Directory(..)
+    , Info
+    , builder
+    , decoder
+    , dismantlers
+    , encoder
+    , getName
+    , pwd
+    )
 
 import Html exposing (..)
 import Json.Decode as JD
@@ -60,9 +69,11 @@ getName dir =
         File { name } ->
             name
 
+
 pwd : Zipper Directory -> String
 pwd =
     Zipper.getPath getName >> String.join "/"
+    
 
 infoDecoder : JD.Decoder Info
 infoDecoder =
