@@ -9,7 +9,6 @@ $terminal-max-width: 1000px;
 body {
   margin: 0;
   padding: 0;
-  background: rgb(200, 200, 200);
   color: $text-color;
   font-family: 'Press Start 2P', cursive;
   font-size: 16px;
@@ -18,7 +17,6 @@ body {
 
 #wrapper {
   height: 100vh;
-  animation: show 1s ease;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -36,12 +34,15 @@ body {
   box-shadow: 0 0px 5px 0px rgba(0, 0, 0, 0.5);
   box-sizing: border-box;
   overflow: scroll;
+  border-radius: 0 0 1rem 1rem;
 }
 
 #header {
   background: rgb(87, 87, 87);
   z-index: 100;
   box-shadow: 0 0 5px 0px rgba(0, 0, 0, 0.5);
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  border-radius: 1rem 1rem 0 0;
 
   span {
     display: inline-block;
@@ -58,7 +59,7 @@ body {
     background: rgb(255, 192, 84);
   }
   span:nth-child(3) {
-    background: rgb(175, 255, 84);
+    background: rgb(131, 211, 40);
   }
 }
 
@@ -146,26 +147,19 @@ a:hover {
   text-decoration: underline;
 }
 
-@keyframes show {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
 @media (max-width: 1020px) {
   #window {
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
   }
 
+  #header {
+    border-radius: 0;
+  }
+
   #tarminal {
     height: calc(100% - #{$header-height});
+    border-radius: 0;
   }
 }
 
