@@ -1,7 +1,7 @@
 module View exposing (view)
 
 import Command exposing (Command(..))
-import Directory as Dir exposing (Directory(..))
+import FileSystem as FS exposing (FileSystem(..))
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Ev
@@ -28,7 +28,7 @@ view model =
                 [ header
                 , div
                     [ Attr.id "tarminal" ] <|
-                    (history model.history) ++ [ stdin model.input model.directory ]
+                    (history model.history) ++ [ stdin model.input model.fileSystem ]
                 ]
         ]
 
@@ -49,7 +49,7 @@ history =
         (\(History dir raw cmd) ->
             div
                 []
-                [ prompt <| Dir.pwd dir
+                [ prompt <| FS.pwd dir
                 , span [] [ text raw ]
                 , Command.view cmd dir
                     |> Html.map OnCommand
@@ -69,10 +69,10 @@ prompt dir =
         ]
 
 
-stdin : String -> Zipper Directory -> Html Msg
+stdin : String -> Zipper FileSystem -> Html Msg
 stdin val dir =
     div []
-        [ Dir.pwd dir 
+        [ FS.pwd dir 
             |> prompt
         , terminalInput
             [ Attr.value val

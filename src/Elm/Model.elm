@@ -3,19 +3,22 @@ module Model exposing (Model, Msg(..), History(..), init)
 import Browser.Dom as Dom
 import Command exposing (..)
 import Command.Help as HelpCmd
-import Directory as Dir exposing (Directory(..))
+import FileSystem as FS exposing (FileSystem(..))
 import Html exposing (Html)
 import Json.Decode as JD
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import Task
+import FileSystem exposing (Directory)
+import Bytes.Encode as BE
+import Utils
 
 
-type History = History (Zipper Directory) String Command
+type History = History (Zipper FileSystem) String Command
 
 type alias Model =
     { input : String
     , history : List History
-    , directory : Zipper Directory
+    , fileSystem : Zipper FileSystem
     }
 
 
@@ -30,21 +33,51 @@ type Msg
     | ClickHeader Bool
 
 
-initDirectory : Directory
-initDirectory =
-    Directory { name = "~" }
-        [ Directory { name = "bin" }
-            [ File { name = "elm" }
+initFileSystem : FileSystem
+initFileSystem =
+    Directory_
+        { info = { name = "~" }
+        , children = 
+            [ Directory_
+                { info = { name = "bin" }
+                , children =
+                    [ File_
+                        { info = { name = "elm" }
+                        , data = BE.encode (BE.string "")
+                        }
+                    ]
+                }
+            , Directory_
+                { info = { name = "dev" }
+                , children = []
+                }
+            , Directory_
+                { info = { name = "usr" }
+                , children = []
+                }
+            , Directory_
+                { info = { name = "Users" }
+                , children =
+                    [ Directory_
+                        { info = { name = "uzimaru0000" }
+                        , children =
+                            [ File_
+                                { info = { name = "profile" }
+                                , data =
+                                    Utils.stringToBytes """## Profile
+- name
+    - uzimaru0000
+- age
+    - 22
+"""
+                                }
+                            ]
+                        }
+                    ]
+                }
             ]
-        , Directory { name = "dev" }
-            []
-        , Directory { name = "usr" }
-            []
-        , Directory { name = "Users" }
-            [ Directory { name = "uzimaru0000" }
-                []
-            ]
-        ]
+        }
+        
 
 
 init : JD.Value -> ( Model, Cmd Msg )
@@ -52,14 +85,14 @@ init value =
     let
         initDir =
             value
-                |> JD.decodeValue Dir.decoder
-                |> Result.withDefault initDirectory
-                |> Dir.builder
+                |> JD.decodeValue FS.decoder
+                |> Result.withDefault initFileSystem
+                |> FS.builder
                 |> Zipper.fromTree
     in
     ( { input = ""
       , history = [ History initDir "help" (Help <| HelpCmd.Help) ]
-      , directory = initDir
+      , fileSystem = initDir
       }
     , Task.attempt (\_ -> NoOp) <| Dom.focus "prompt"
     )

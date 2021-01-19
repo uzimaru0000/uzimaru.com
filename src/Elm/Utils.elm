@@ -3,11 +3,16 @@ module Utils exposing
     , argsParser
     , optionParser
     , createList
+    , bytesToString
+    , stringToBytes
     )
 
 import Parser exposing ((|.), Parser)
 import Set
 import Html exposing (Html)
+import Bytes exposing (Bytes)
+import Bytes.Decode as BD
+import Bytes.Encode as BE
 
 
 anyString : Parser String
@@ -57,3 +62,22 @@ createList ( a, b ) =
         [ Html.span [] [ Html.text a ]
         , Html.span [] [ Html.text b ]
         ]
+
+
+-- sized string buffer
+bytesToString : Bytes -> Maybe String
+bytesToString =
+    let
+        decoder =
+            BD.unsignedInt32 Bytes.BE
+               |> BD.andThen BD.string
+    in
+    BD.decode decoder
+
+stringToBytes : String -> Bytes
+stringToBytes str =
+    BE.encode <|
+        BE.sequence
+            [ BE.unsignedInt32 Bytes.BE (String.length str)
+            , BE.string str
+            ]

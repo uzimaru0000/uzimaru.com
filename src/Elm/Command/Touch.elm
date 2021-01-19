@@ -6,7 +6,8 @@ import Command.Help as Help exposing (HelpInfo(..))
 import Html exposing (Html)
 import Lazy.Tree as Tree
 import Lazy.Tree.Zipper as Zipper exposing (Zipper(..))
-import Directory as Dir exposing (Directory(..))
+import FileSystem as FS exposing (FileSystem(..))
+import Bytes.Encode as BE
 
 
 type Touch
@@ -50,7 +51,7 @@ info =
         }
 
 
-run : Touch -> Zipper Directory -> Result String (Zipper Directory)
+run : Touch -> Zipper FileSystem -> Result String (Zipper FileSystem)
 run (Touch args) dir =
     let
         dirName = Maybe.withDefault "" args.param
@@ -58,7 +59,7 @@ run (Touch args) dir =
         exist = 
             dir
                 |> Zipper.children
-                |> List.any (Dir.getName >> (==) dirName)
+                |> List.any (FS.getName >> (==) dirName)
     in
         if args.help then
             Ok dir
@@ -66,7 +67,13 @@ run (Touch args) dir =
             Err "mkdir: File exists"
         else
             dir
-                |> Zipper.insert (Tree.singleton <| File { name = dirName })
+                |> Zipper.insert
+                    ({ info = { name = dirName }
+                     , data = BE.encode <| BE.string ""
+                     }
+                        |> File_
+                        |> Tree.singleton
+                    )
                 |> Ok
 
 

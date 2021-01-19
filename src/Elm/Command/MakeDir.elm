@@ -6,7 +6,7 @@ import Command.Help as Help exposing (HelpInfo(..))
 import Html exposing (Html)
 import Lazy.Tree as Tree
 import Lazy.Tree.Zipper as Zipper exposing (Zipper(..))
-import Directory as Dir exposing (Directory(..))
+import FileSystem as FS exposing (FileSystem(..))
 
 
 type MakeDir
@@ -49,7 +49,7 @@ info =
         , detailInfo =
             [ HelpInfo
                 { name = "<dir name>"
-                , info = "The name of the directory to create"
+                , info = "The name of the FileSystem to create"
                 , detailInfo = []
                 }
             , HelpInfo
@@ -61,7 +61,7 @@ info =
         }
 
 
-run : MakeDir -> Zipper Directory -> Result String (Zipper Directory)
+run : MakeDir -> Zipper FileSystem -> Result String (Zipper FileSystem)
 run (MakeDir args) dir =
     let
         dirName = Maybe.withDefault "" args.param
@@ -69,7 +69,7 @@ run (MakeDir args) dir =
         exist = 
             dir
                 |> Zipper.children
-                |> List.any (Dir.getName >> (==) dirName)
+                |> List.any (FS.getName >> (==) dirName)
     in
         if args.help then
             Ok dir
@@ -77,7 +77,7 @@ run (MakeDir args) dir =
             Err "mkdir: File exists"
         else
             dir
-                |> Zipper.insert (Tree.singleton <| Directory { name = dirName } [])
+                |> Zipper.insert (Tree.singleton <| Directory_ { info = { name = dirName }, children = [] })
                 |> Ok
 
 

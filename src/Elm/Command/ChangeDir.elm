@@ -6,7 +6,7 @@ import Html.Attributes exposing (default)
 import Command.Help exposing (HelpInfo(..))
 import Html exposing (Html)
 import Lazy.Tree.Zipper as Zipper exposing (Zipper(..))
-import Directory as Dir exposing (Directory(..))
+import FileSystem as FS exposing (FileSystem(..), Error(..))
 
 
 type ChangeDir
@@ -16,11 +16,6 @@ type ChangeDir
 type alias Args =
     { param : Maybe String
     }
-
-
-type Error
-    = NotExist
-    | TargetIsFile
 
 
 parser : Parser ChangeDir
@@ -46,72 +41,32 @@ info : HelpInfo
 info =
     HelpInfo
         { name = "cd"
-        , info = "Change Directory"
+        , info = "Change FileSystem"
         , detailInfo =
             [ HelpInfo
                 { name = "[dir name]"
-                , info = "The name of the destination directory"
+                , info = "The name of the destination FileSystem"
                 , detailInfo = []
                 }
             ]
         }
 
 
-run : ChangeDir -> Zipper Directory -> Result String (Zipper Directory)
+run : ChangeDir -> Zipper FileSystem -> Result String (Zipper FileSystem)
 run (ChangeDir args) dir =
     case args.param of
         Just path ->
-            changeDirHelper (String.split "/" path) dir
+            FS.cwd (String.split "/" path) dir
                 |> Result.mapError
                     (\x ->
                         case x of
-                            NotExist ->
-                                "cd: The directory '" ++ path ++ "' does not exist"
                             TargetIsFile ->
-                                "cd: '" ++ path ++ "' is not a directory"
+                                "cd: '" ++ path ++ "' is not a FileSystem"
+                            _ ->
+                                "cd: The FileSystem '" ++ path ++ "' does not exist"
                     )
         Nothing ->
             Ok <| Zipper.root dir
-
-
-changeDirHelper : List String -> Zipper Directory -> Result Error (Zipper Directory)
-changeDirHelper path dir =
-    case path of
-        ".." :: tail ->
-            dir
-                |> Zipper.up
-                |> Result.fromMaybe NotExist
-                |> Result.andThen (changeDirHelper tail)
-
-        "." :: tail ->
-            changeDirHelper tail dir
-
-        head :: tail ->
-            dir
-                |> Zipper.open
-                    (\x ->
-                        case x of
-                            Directory { name } _ ->
-                                name == head
-
-                            File _ ->
-                                False
-                    )
-                |> Result.fromMaybe
-                    (case Zipper.open (Dir.getName >> (==) head) dir |> Maybe.map Zipper.current of
-                        Just (File _) ->
-                            TargetIsFile
-
-                        Nothing ->
-                            NotExist
-
-                        _ ->
-                            NotExist
-                    )
-                |> Result.andThen (changeDirHelper tail)
-
-        [] ->
-            Ok dir
 
 
 view : Html msg

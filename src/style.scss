@@ -9,10 +9,14 @@ $terminal-max-width: 1000px;
 body {
   margin: 0;
   padding: 0;
-  color: $text-color;
   font-family: 'Press Start 2P', cursive;
+  color: $text-color;
   font-size: 16px;
   line-height: 1.25rem;
+}
+
+pre {
+  font-family: 'Press Start 2P', cursive;
 }
 
 #wrapper {

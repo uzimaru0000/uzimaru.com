@@ -14,7 +14,8 @@ import Command.ChangeDir as ChangeDirCmd
 import Command.MakeDir as MakeDirCmd
 import Command.Touch as TouchCmd
 import Command.Remove as RemoveCmd
-import Directory as Dir exposing (Directory(..))
+import Command.Concat as ConcatCmd
+import FileSystem as FS exposing (FileSystem(..))
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Ev
@@ -43,6 +44,7 @@ type Command
     | MakeDir MakeDirCmd.MakeDir
     | Touch TouchCmd.Touch
     | Remove RemoveCmd.Remove
+    | Concat ConcatCmd.Concat
 
 
 parser : Parser Command
@@ -59,6 +61,7 @@ parser =
         , MakeDirCmd.parser |> Parser.map MakeDir
         , TouchCmd.parser |> Parser.map Touch
         , RemoveCmd.parser |> Parser.map Remove
+        , ConcatCmd.parser |> Parser.map Concat
         ]
 
 
@@ -90,7 +93,7 @@ cmdToStr cmd =
         Work_ -> "work"
 
 
-run : Command -> Zipper Directory -> (Result String (Zipper Directory), Cmd msg)
+run : Command -> Zipper FileSystem -> (Result String (Zipper FileSystem), Cmd msg)
 run cmd dir =
     case cmd of
         Link linkCmd ->
@@ -138,8 +141,8 @@ run cmd dir =
             (Ok dir, Cmd.none)
 
 
-view : Command -> Zipper Directory -> Html Command
-view cmd directory =
+view : Command -> Zipper FileSystem -> Html Command
+view cmd fileSystem =
     case cmd of
         Help helpCmd ->
             HelpCmd.view
@@ -188,7 +191,7 @@ view cmd directory =
         List listCmd ->
             ListCmd.view
                 listCmd
-                directory
+                fileSystem
 
         ChangeDir changeDirCmd ->
             ChangeDirCmd.view
@@ -201,6 +204,9 @@ view cmd directory =
 
         Remove removeCmd ->
             RemoveCmd.view removeCmd
+        
+        Concat concatCmd ->
+            ConcatCmd.view concatCmd fileSystem
 
         CmdErr err ->
             Html.div [] [ Html.text err ]

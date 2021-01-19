@@ -6,7 +6,7 @@ import Command.Help as Help exposing (HelpInfo(..))
 import Html exposing (Html)
 import Lazy.Tree as Tree
 import Lazy.Tree.Zipper as Zipper exposing (Zipper(..))
-import Directory as Dir exposing (Directory(..))
+import FileSystem as FS exposing (FileSystem(..))
 
 type Remove
     = Remove Args
@@ -47,23 +47,23 @@ info : HelpInfo
 info =
     HelpInfo
         { name = "rm"
-        , info = "remove directory entries"
+        , info = "remove FileSystem entries"
         , detailInfo = []
         }
 
 
-run : Remove -> Zipper Directory -> Result String (Zipper Directory)
+run : Remove -> Zipper FileSystem -> Result String (Zipper FileSystem)
 run (Remove args) dir =
     let
         path = Maybe.withDefault "" args.param
         newDir =
             dir
-                |> Zipper.openPath (\p d -> p == Dir.getName d) (String.split "/" path)
+                |> Zipper.openPath (\p d -> p == FS.getName d) (String.split "/" path)
                 |> Result.mapError (always "rm: No such file or directory")
                 |> Result.andThen
                     (\d ->
                         case (args.recursive, Zipper.current d) of
-                            (False, Directory _ _) ->
+                            (False, Directory_ _) ->
                                 Err <| "rm: " ++ path ++ ": is a directory"
                             _ ->
                                 Ok d

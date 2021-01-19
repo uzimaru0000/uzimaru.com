@@ -2,7 +2,7 @@ module Update exposing (update)
 
 import Browser.Dom
 import Command as Cmd exposing (Command(..))
-import Directory as Dir exposing (Directory(..))
+import FileSystem as FS exposing (FileSystem(..))
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import LocalStorage as LS
 import Model exposing (..)
@@ -33,10 +33,10 @@ update msg model =
                 model
 
         OnCommand cmd ->
-            Cmd.run cmd model.directory
+            Cmd.run cmd model.fileSystem
                 |> (\(result, effect) ->
                     let
-                        dir = Result.withDefault model.directory result
+                        dir = Result.withDefault model.fileSystem result
                         cmd_ =
                             case result of
                                 Ok _ -> cmd
@@ -44,10 +44,10 @@ update msg model =
                     in
                     ( { model
                         | input = ""
-                        , directory = dir
+                        , fileSystem = dir
                         , history =
                             model.history
-                                ++ [ History model.directory model.input cmd_ ]
+                                ++ [ History model.fileSystem model.input cmd_ ]
                     }
                     , [ tarminalJumpToBotton "tarminal"
                       , focus

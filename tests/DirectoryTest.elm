@@ -1,6 +1,6 @@
-module DirectoryTest exposing (decoderTest, encoderTest)
+module FileSystemTest exposing (decoderTest, encoderTest)
 
-import Directory as Dir exposing (Directory(..))
+import FileSystem as FS exposing (FileSystem(..))
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
 import Json.Decode as JD
@@ -10,28 +10,28 @@ import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import Test exposing (..)
 
 
-directoryData : Dir.Directory
-directoryData =
-    Directory { name = "/" }
-        [ Directory { name = "bin" }
+FileSystemData : Dir.FileSystem
+FileSystemData =
+    FileSystem { name = "/" }
+        [ FileSystem { name = "bin" }
             [ File { name = "elm" } ]
-        , Directory { name = "dev" }
+        , FileSystem { name = "dev" }
             []
-        , Directory { name = "Users" }
-            [ Directory { name = "uzimaru0000" }
+        , FileSystem { name = "Users" }
+            [ FileSystem { name = "uzimaru0000" }
                 []
             ]
         ]
 
 
-directoryTree : Tree Dir.Directory
-directoryTree =
-    Dir.builder directoryData
+FileSystemTree : Tree Dir.FileSystem
+FileSystemTree =
+    Dir.builder FileSystemData
 
 
-directoryZipper : Zipper Dir.Directory
-directoryZipper =
-    Zipper.fromTree directoryTree
+FileSystemZipper : Zipper Dir.FileSystem
+FileSystemZipper =
+    Zipper.fromTree FileSystemTree
 
 
 jsonData : String
@@ -69,7 +69,7 @@ decoderTest =
             \_ ->
                 Expect.equal
                     (JD.decodeString Dir.decoder jsonData)
-                    (Ok directoryData)
+                    (Ok FileSystemData)
         ]
 
 
@@ -79,10 +79,10 @@ encoderTest =
         [ test "エンコードしてデコードしたものがもとに戻っている" <|
             \_ ->
                 Expect.equal
-                    (directoryData
+                    (FileSystemData
                         |> Dir.encoder
                         |> JE.encode 0
                         |> JD.decodeString Dir.decoder
                     )
-                    (Ok directoryData)
+                    (Ok FileSystemData)
         ]

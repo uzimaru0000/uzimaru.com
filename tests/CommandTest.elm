@@ -5,7 +5,7 @@ import Command.Help as HelpCmd
 import Command.Link as LinkCmd
 import Command.WhoAmI as WhoAmICmd
 import Command.Work as WorkCmd
-import Directory exposing (Directory(..))
+import FileSystem exposing (FileSystem(..))
 import Expect exposing (Expectation)
 import Fuzz
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
@@ -15,23 +15,23 @@ import Shrink
 import Test exposing (..)
 
 
-dirZipper : Zipper Directory
+dirZipper : Zipper FileSystem
 dirZipper =
-    Directory { name = "/" }
-        [ Directory { name = "bin" }
+    FileSystem { name = "/" }
+        [ FileSystem { name = "bin" }
             [ File { name = "elm" }
             ]
-        , Directory { name = "dev" }
+        , FileSystem { name = "dev" }
             []
-        , Directory { name = "usr" }
+        , FileSystem { name = "usr" }
             []
-        , Directory { name = "Users" }
-            [ Directory { name = "uzimaru0000" }
+        , FileSystem { name = "Users" }
+            [ FileSystem { name = "uzimaru0000" }
                 []
             ]
         , File { name = "test.txt" }
         ]
-        |> Directory.builder
+        |> FileSystem.builder
         |> Zipper.fromTree
 
 
@@ -43,7 +43,7 @@ dirZipper =
 --                 case remove [ "test.txt" ] dirZipper of
 --                     Ok dir ->
 --                         Expect.equal
---                             (Zipper.open (Directory.getName >> (==) "test.txt") dir)
+--                             (Zipper.open (FileSystem.getName >> (==) "test.txt") dir)
 --                             Nothing
 
 --                     Err error ->
@@ -61,7 +61,7 @@ dirZipper =
 --                 case remove [ "-r", "dev" ] dirZipper of
 --                     Ok dir ->
 --                         Expect.equal
---                             (Zipper.open (Directory.getName >> (==) "dev") dir)
+--                             (Zipper.open (FileSystem.getName >> (==) "dev") dir)
 --                             Nothing
 
 --                     Err err ->
@@ -71,7 +71,7 @@ dirZipper =
 --                 case remove [ "bin/elm" ] dirZipper of
 --                     Ok dir ->
 --                         Expect.err
---                             (Zipper.openPath (\p d -> p == Directory.getName d) [ "bin", "elm" ] dir)
+--                             (Zipper.openPath (\p d -> p == FileSystem.getName d) [ "bin", "elm" ] dir)
 
 --                     Err err ->
 --                         Expect.fail err
@@ -83,12 +83,12 @@ dirZipper =
 --                             |> Expect.all
 --                                 [ \x ->
 --                                     Expect.equal
---                                         (Zipper.open (Directory.getName >> (==) "Users") x)
+--                                         (Zipper.open (FileSystem.getName >> (==) "Users") x)
 --                                         Nothing
 --                                 , \x ->
 --                                     Expect.err
 --                                         (Zipper.openPath
---                                             (\p d -> p == Directory.getName d)
+--                                             (\p d -> p == FileSystem.getName d)
 --                                             [ "Users", "uzimaru0000" ]
 --                                             x
 --                                         )
@@ -107,7 +107,7 @@ dirZipper =
 --                 case changeDir [ "Users" ] dirZipper of
 --                     Ok dir ->
 --                         Expect.equal
---                             (Zipper.current dir |> Directory.getName)
+--                             (Zipper.current dir |> FileSystem.getName)
 --                             "Users"
 
 --                     Err err ->
@@ -117,7 +117,7 @@ dirZipper =
 --                 case changeDir [ "Users/uzimaru0000" ] dirZipper of
 --                     Ok dir ->
 --                         Expect.equal
---                             (Zipper.current dir |> Directory.getName)
+--                             (Zipper.current dir |> FileSystem.getName)
 --                             "uzimaru0000"
 
 --                     Err err ->
@@ -131,7 +131,7 @@ dirZipper =
 --                 case changeDir [ "Users/.." ] dirZipper of
 --                     Ok dir ->
 --                         Expect.equal
---                             (Zipper.current dir |> Directory.getName)
+--                             (Zipper.current dir |> FileSystem.getName)
 --                             "/"
 
 --                     Err err ->
@@ -141,7 +141,7 @@ dirZipper =
 --                 case changeDir [ "./Users" ] dirZipper of
 --                     Ok dir ->
 --                         Expect.equal
---                             (Zipper.current dir |> Directory.getName)
+--                             (Zipper.current dir |> FileSystem.getName)
 --                             "Users"
 
 --                     Err err ->
