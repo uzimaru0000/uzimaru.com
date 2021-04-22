@@ -3,6 +3,7 @@ module Command exposing
     , parser
     , view
     , run
+    , complement
     )
 
 import Command.Help as HelpCmd
@@ -15,21 +16,11 @@ import Command.MakeDir as MakeDirCmd
 import Command.Touch as TouchCmd
 import Command.Remove as RemoveCmd
 import Command.Concat as ConcatCmd
-import FileSystem as FS exposing (FileSystem(..))
+import FileSystem exposing (FileSystem(..))
 import Html exposing (..)
-import Html.Attributes as Attr
-import Html.Events as Ev
-import Lazy.Tree.Zipper as Zipper exposing (Zipper)
+import Lazy.Tree.Zipper exposing (Zipper)
 import Parser exposing ((|.), (|=), Parser)
-import Set
 import Dict
-
-
-type CommandTag
-    = Help_
-    | WhoAmI_
-    | Work_
-    | Link_
 
 
 type Command
@@ -63,34 +54,6 @@ parser =
         , RemoveCmd.parser |> Parser.map Remove
         , ConcatCmd.parser |> Parser.map Concat
         ]
-
-
-strToCmd : String -> Maybe CommandTag
-strToCmd str =
-    case str of
-        "help" ->
-            Just Help_
-
-        "whoami" ->
-            Just WhoAmI_
-
-        "link" ->
-            Just Link_
-
-        "work" ->
-            Just Work_
-
-        _ ->
-            Nothing
-
-
-cmdToStr : CommandTag -> String
-cmdToStr cmd =
-    case cmd of
-        Help_ -> "help"
-        WhoAmI_ -> "whoami"
-        Link_ -> "link"
-        Work_ -> "work"
 
 
 run : Command -> Zipper FileSystem -> (Result String (Zipper FileSystem), Cmd msg)
@@ -144,7 +107,7 @@ run cmd dir =
 view : Command -> Zipper FileSystem -> Html Command
 view cmd fileSystem =
     case cmd of
-        Help helpCmd ->
+        Help _ ->
             HelpCmd.view
                 "Welcome to the uzimaru's portfolio site!!"
                 "[Basic commands]"
@@ -193,7 +156,7 @@ view cmd fileSystem =
                 listCmd
                 fileSystem
 
-        ChangeDir changeDirCmd ->
+        ChangeDir _ ->
             ChangeDirCmd.view
 
         MakeDir makeDirCmd ->
@@ -214,3 +177,25 @@ view cmd fileSystem =
         None ->
             Html.text ""
 
+
+complementList : List String
+complementList =
+    [ "help"
+    , "work"
+    , "whoami"
+    , "link"
+    , "ls"
+    , "cd" 
+    , "mkdir"
+    , "touch"
+    , "rm"
+    , "cat"
+    ]
+
+complement : String -> List String
+complement input =
+    if String.isEmpty input then
+        []
+    else
+        complementList
+            |> List.filter (String.startsWith input)

@@ -21,6 +21,7 @@ update msg model =
         OnInput str ->
             ( { model
                 | input = str
+                , complement = Nothing
               }
             , Cmd.none
             )
@@ -30,7 +31,29 @@ update msg model =
                 |> OnCommand
                 |> update
             )
-                model
+                { model | complement = Nothing }
+
+        OnTab ->
+            let
+                complements =
+                    case model.complement of
+                        Just comp -> comp
+                        Nothing -> Cmd.complement model.input
+                
+                complementHead =
+                    List.head complements
+                        |> Maybe.withDefault model.input
+
+                complementTail =
+                    List.tail complements
+                        |> Maybe.withDefault []
+            in
+            ( { model
+                | complement = Just complementTail
+                , input = complementHead
+              }
+            , Cmd.none
+            )
 
         OnCommand cmd ->
             Cmd.run cmd model.fileSystem
@@ -45,6 +68,7 @@ update msg model =
                     ( { model
                         | input = ""
                         , fileSystem = dir
+                        , complement = Nothing
                         , history =
                             model.history
                                 ++ [ History model.fileSystem model.input cmd_ ]
@@ -69,6 +93,7 @@ update msg model =
                     prevCmd
                         |> Maybe.map (\(History _ str _) -> str)
                         |> Maybe.withDefault ""
+                , complement = Nothing
               }
             , Cmd.none
             )

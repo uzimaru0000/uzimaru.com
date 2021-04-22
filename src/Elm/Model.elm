@@ -19,6 +19,7 @@ type alias Model =
     { input : String
     , history : List History
     , fileSystem : Zipper FileSystem
+    , complement : Maybe (List String)
     }
 
 
@@ -26,6 +27,7 @@ type Msg
     = NoOp
     | OnInput String
     | OnEnter
+    | OnTab
     | OnCommand Command
     | PrevCommand
     | Clear
@@ -93,6 +95,7 @@ init value =
     ( { input = ""
       , history = [ History initDir "help" (Help <| HelpCmd.Help) ]
       , fileSystem = initDir
+      , complement = Nothing
       }
     , Task.attempt (\_ -> NoOp) <| Dom.focus "prompt"
     )

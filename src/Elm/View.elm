@@ -83,6 +83,9 @@ stdin val dir =
                     case ( ctrl, code ) of
                         ( True, 76 ) ->
                             JD.succeed Clear
+                        
+                        ( _, 9 ) ->
+                            JD.succeed OnTab
 
                         ( _, 13 ) ->
                             JD.succeed OnEnter
@@ -103,4 +106,5 @@ onKeyDownWithCtrl decoder =
         (JD.field "ctrlKey" JD.bool)
         (JD.field "keyCode" JD.int)
         |> JD.andThen identity
-        |> Ev.on "keydown"
+        |> JD.map (\x -> (x, True))
+        |> Ev.preventDefaultOn "keydown"
