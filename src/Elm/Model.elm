@@ -11,15 +11,17 @@ import Task
 import FileSystem exposing (Directory)
 import Bytes.Encode as BE
 import Utils
+import Command.State as State exposing (ProcState)
 
 
-type History = History (Zipper FileSystem) String Command
+type History = History (Zipper FileSystem) String (ProcState Process)
 
 type alias Model =
     { input : String
     , history : List History
     , fileSystem : Zipper FileSystem
     , complement : Maybe (List String)
+    , process : Process
     }
 
 
@@ -28,7 +30,8 @@ type Msg
     | OnInput String
     | OnEnter
     | OnTab
-    | OnCommand Command
+    | ProcessMsg ProcessMsg
+    | RunProcess (ProcState Process)
     | PrevCommand
     | Clear
     | Focus
@@ -93,9 +96,10 @@ init value =
                 |> Zipper.fromTree
     in
     ( { input = ""
-      , history = [ History initDir "help" (Help <| HelpCmd.Help) ]
+      , history = [ History initDir "help" (State.Exit Stay) ]
       , fileSystem = initDir
       , complement = Nothing
+      , process = Stay
       }
     , Task.attempt (\_ -> NoOp) <| Dom.focus "prompt"
     )

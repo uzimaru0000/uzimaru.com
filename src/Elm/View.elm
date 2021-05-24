@@ -9,6 +9,7 @@ import Json.Decode as JD
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import Model exposing (..)
 import CustomElement exposing (..)
+import Command.State as State exposing (ProcState(..))
 
 
 
@@ -28,7 +29,11 @@ view model =
                 [ header
                 , div
                     [ Attr.id "tarminal" ] <|
-                    (history model.history) ++ [ stdin model.input model.fileSystem ]
+                        (history model.history) ++
+                        [ case model.process of
+                            Command.Stay -> stdin model.input model.fileSystem
+                            _ -> Command.view model.process
+                        ]
                 ]
         ]
 
@@ -46,13 +51,15 @@ header =
 history : List History -> List (Html Msg)
 history =
     List.map
-        (\(History dir raw cmd) ->
+        (\(History dir raw state) ->
             div
                 []
                 [ prompt <| FS.pwd dir
                 , span [] [ text raw ]
-                , Command.view cmd dir
-                    |> Html.map OnCommand
+                , case state of
+                    State.Running _ -> text ""
+                    State.Error _ err -> text err
+                    State.Exit p -> Command.view p
                 ]
         )
 

@@ -2,13 +2,11 @@ module Update exposing (update)
 
 import Browser.Dom
 import Command as Cmd exposing (Command(..))
-import FileSystem as FS exposing (FileSystem(..))
-import Lazy.Tree.Zipper as Zipper exposing (Zipper)
-import LocalStorage as LS
+import FileSystem exposing (FileSystem(..))
 import Model exposing (..)
 import Parser
 import Task
-import Html.Attributes exposing (dir)
+import Command.State exposing (ProcState(..))
 
 
 
@@ -27,11 +25,16 @@ update msg model =
             )
 
         OnEnter ->
-            (parseCommand model.input
-                |> OnCommand
-                |> update
-            )
-                { model | complement = Nothing }
+            let
+                (state, procEffect) =
+                    parseCommand model.input
+                        |> \c -> Cmd.init c model.fileSystem
+                        |> Cmd.run Cmd.Init
+                        
+                (newModel, effect)
+                    = update (RunProcess state) model
+            in
+            (newModel, [Cmd.map ProcessMsg procEffect, effect] |> Cmd.batch)
 
         OnTab ->
             let
@@ -55,31 +58,27 @@ update msg model =
             , Cmd.none
             )
 
-        OnCommand cmd ->
-            Cmd.run cmd model.fileSystem
-                |> (\(result, effect) ->
-                    let
-                        dir = Result.withDefault model.fileSystem result
-                        cmd_ =
-                            case result of
-                                Ok _ -> cmd
-                                Err err -> Cmd.CmdErr err
-                    in
-                    ( { model
-                        | input = ""
-                        , fileSystem = dir
-                        , complement = Nothing
-                        , history =
-                            model.history
-                                ++ [ History model.fileSystem model.input cmd_ ]
-                    }
-                    , [ tarminalJumpToBotton "tarminal"
-                      , focus
-                      , effect
-                      ]
-                          |> Cmd.batch
-                    )
-                   )
+        RunProcess state ->
+            let
+                newModel =
+                    case state of
+                        Running p ->
+                            { model
+                               | process = p
+                            }
+
+                        _ ->
+                            { model
+                               | history = model.history ++ [ History model.fileSystem model.input state ]
+                               , process = Cmd.Stay
+                               , input = ""
+                            }
+            in
+            (newModel
+            , [ tarminalJumpToBotton "tarminal"
+              , focus
+              ] |> Cmd.batch
+            )
 
         PrevCommand ->
             let
