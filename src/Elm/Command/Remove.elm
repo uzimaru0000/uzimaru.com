@@ -4,9 +4,9 @@ import Parser exposing (Parser, (|.), (|=))
 import Utils
 import Command.Help as Help exposing (HelpInfo(..))
 import Html exposing (Html)
-import Lazy.Tree as Tree
 import Lazy.Tree.Zipper as Zipper exposing (Zipper(..))
 import FileSystem as FS exposing (FileSystem(..))
+import Command.State exposing (ProcState)
 
 type Remove
     = Remove Args
@@ -17,6 +17,20 @@ type alias Args =
     , recursive : Bool
     , param : Maybe String
     }
+    
+
+type alias Flags =
+    { fs : Zipper FileSystem
+    }
+
+
+type alias Proc =
+    { help : Bool
+    , recursive : Bool
+    , param : Maybe String
+    , fs : Zipper FileSystem
+    }
+    
 
 parser : Parser Remove
 parser =
@@ -50,14 +64,14 @@ info =
         , info = "remove FileSystem entries"
         , detailInfo = []
         }
-
-
-run : Remove -> Zipper FileSystem -> Result String (Zipper FileSystem)
-run (Remove args) dir =
+        
+    
+init : Args -> Flags -> (ProcState Proc, Cmd msg)
+init args flags =
     let
         path = Maybe.withDefault "" args.param
-        newDir =
-            dir
+        newFS =
+            flags.fs
                 |> Zipper.openPath (\p d -> p == FS.getName d) (String.split "/" path)
                 |> Result.mapError (always "rm: No such file or directory")
                 |> Result.andThen
@@ -68,21 +82,43 @@ run (Remove args) dir =
                             _ ->
                                 Ok d
                     )
+                |> Result.map (Zipper.attempt Zipper.delete)
+                    
+        proc =
+            { param = args.param
+            , help = args.help
+            , recursive = args.recursive
+            , fs = flags.fs
+            }
     in
-    newDir
-        |> Result.map (Zipper.attempt Zipper.delete)
+    case newFS of
+        Ok fs ->
+            ( Command.State.Exit { proc | fs = fs }
+            , Cmd.none)
+        
+        Err err ->
+            ( Command.State.Error proc err
+            , Cmd.none
+            )
 
 
-view : Remove -> Html msg
-view (Remove args) =
-    if args.help then
+
+run : Never -> Proc -> (ProcState Proc, Cmd msg)
+run _ proc =
+    (Command.State.Exit proc, Cmd.none)
+
+
+view : Proc -> Html msg
+view { help } =
+    if help then
         let
             (HelpInfo inner) = info
         in
         Help.view
-            inner.name
-            "[options]"
-            inner.detailInfo
+            { message = inner.info
+            , label = "[options]"
+            , infos = inner.detailInfo
+            }
     else
         Html.text ""
 

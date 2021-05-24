@@ -32,7 +32,7 @@ view model =
                         (history model.history) ++
                         [ case model.process of
                             Command.Stay -> stdin model.input model.fileSystem
-                            _ -> Command.view model.process
+                            _ -> Command.view model.process |> Html.map ProcessMsg
                         ]
                 ]
         ]
@@ -58,8 +58,8 @@ history =
                 , span [] [ text raw ]
                 , case state of
                     State.Running _ -> text ""
-                    State.Error _ err -> text err
-                    State.Exit p -> Command.view p
+                    State.Error _ err -> div [] [ text err ]
+                    State.Exit p -> Command.view p |> Html.map ProcessMsg
                 ]
         )
 

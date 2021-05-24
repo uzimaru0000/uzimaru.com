@@ -7,6 +7,7 @@ module Command exposing
     , init
     , run
     , complement
+    , getFS
     )
 
 import Command.Help as HelpCmd
@@ -44,12 +45,29 @@ type Command
     
 type Process
     = Stay
+    | HelpProc HelpCmd.Proc
     | LinkProc LinkCmd.Proc
+    | WhoAmIProc WhoAmICmd.Proc
+    | WorkProc WorkCmd.Proc
+    | ListProc ListCmd.Proc
+    | TouchProc TouchCmd.Proc
+    | ChangeDirProc ChangeDirCmd.Proc
+    | MakeDirProc MakeDirCmd.Proc
+    | RemoveProc RemoveCmd.Proc
+    | ConcatProc ConcatCmd.Proc
 
 
 type ProcessMsg
-    = Init
+    = HelpProcMsg HelpCmd.Msg
     | LinkProcMsg LinkCmd.Msg
+    | WhoAmIProcMsg WhoAmICmd.Msg
+    | WorkProcMsg WorkCmd.Msg
+    | ListProcMsg ListCmd.Msg
+    | TouchProcMsg TouchCmd.Msg
+    | ChangeDirProcMsg Never
+    | MakeDirProcMsg Never
+    | RemoveProcMsg Never
+    | ConcatProcMsg Never
 
 
 parser : Parser Command
@@ -70,9 +88,23 @@ parser =
         ]
 
 
-init : Command -> Zipper FileSystem -> Process
+init : Command -> Zipper FileSystem -> (ProcState Process, Cmd ProcessMsg)
 init cmd dir =
     case cmd of
+        Help _ ->
+            HelpCmd.init
+                ()
+                { message = "Welcome to the uzimaru's portfolio site!!" 
+                , label = "[Basic commands]"
+                , infos =
+                    [ HelpCmd.info
+                    , WhoAmICmd.info
+                    , WorkCmd.info
+                    , LinkCmd.info
+                    ]
+                }
+                |> map HelpProc HelpProcMsg
+
         Link (LinkCmd.Link args) ->
             LinkCmd.init
                 args
@@ -84,118 +116,187 @@ init cmd dir =
                     , ( "Blog", "http://blog.uzimaru.com" )
                     ]
                 )
-                |> LinkProc
+                |> map LinkProc LinkProcMsg
                 
-        _ -> Stay
-
-        -- Work workCmd ->
-        --     ( Ok dir
-        --     , WorkCmd.run
-        --         workCmd
-        --         (Dict.fromList
-        --             [ ( "WeatherApp", ("WeatherApp made by Elm.", "https://uzimaru0000.github.io/elm-weather-app") )
-        --             , ( "UniTEA", ("Implementation of The Elm Architecture for Unity3D", "https://github.com/uzimaru0000/UniTEA") )
-        --             , ( "TabClock", ("Chrome extension to display clock on NewTab", "https://github.com/uzimaru0000/TabClock") )
-        --             , ( "VR", ("Summary made with VR.", "https://twitter.com/i/moments/912461981851860992") )
-        --             , ( "Splash", ("Applications that simulate ink splash", "https://splash.uzimaru.com/"))
-        --             , ( "clumsy", ("Clone of git implemented in rust.", "https://github.com/uzimaru0000/clumsy"))
-        --             ]
-        --         )
-        --     )
-        -- 
-        -- ChangeDir changeDirCmd ->
-        --     (ChangeDirCmd.run changeDirCmd dir, Cmd.none)
-
-        -- MakeDir makeDirCmd ->
-        --     (MakeDirCmd.run makeDirCmd dir, Cmd.none)
-
-        -- Touch touchCmd ->
-        --     (TouchCmd.run touchCmd dir, Cmd.none)
-
-        -- Remove removeCmd ->
-        --     (RemoveCmd.run removeCmd dir, Cmd.none)
-
+        WhoAmI (WhoAmICmd.WhoAmI args) ->
+            WhoAmICmd.init
+                args
+                { infos =
+                    [ ( "Name", "Shuji Oba (uzimaru)" )
+                    , ( "Age", "22" )
+                    , ( "Hobby", "Cooking, Programming" )
+                    , ( "Likes", "WebFrontend, Elm, Rust" )
+                    ]
+                }
+                |> map WhoAmIProc WhoAmIProcMsg
+                
+        Work (WorkCmd.Work args) ->
+            WorkCmd.init
+                args
+                { works =
+                    Dict.fromList
+                        [ ( "WeatherApp", ("WeatherApp made by Elm.", "https://uzimaru0000.github.io/elm-weather-app") )
+                        , ( "UniTEA", ("Implementation of The Elm Architecture for Unity3D", "https://github.com/uzimaru0000/UniTEA") )
+                        , ( "TabClock", ("Chrome extension to display clock on NewTab", "https://github.com/uzimaru0000/TabClock") )
+                        , ( "VR", ("Summary made with VR.", "https://twitter.com/i/moments/912461981851860992") )
+                        , ( "Splash", ("Applications that simulate ink splash", "https://splash.uzimaru.com/"))
+                        , ( "clumsy", ("Clone of git implemented in rust.", "https://github.com/uzimaru0000/clumsy"))
+                        ] 
+                }
+                |> map WorkProc WorkProcMsg
+                
+        List (ListCmd.List args) ->
+            ListCmd.init
+                args
+                { fs = dir
+                }
+                |> map ListProc ListProcMsg
+                
+        
+        Touch (TouchCmd.Touch args) ->
+            TouchCmd.init
+                args
+                { fs = dir
+                }
+                |> map TouchProc TouchProcMsg
+                
+        ChangeDir (ChangeDirCmd.ChangeDir args) ->
+            ChangeDirCmd.init
+                args
+                { fs = dir
+                }
+                |> map ChangeDirProc ChangeDirProcMsg
+            
+        MakeDir (MakeDirCmd.MakeDir args) ->
+            MakeDirCmd.init
+                args
+                { fs = dir
+                }
+                |> map MakeDirProc MakeDirProcMsg
+            
+        Remove (RemoveCmd.Remove args) ->
+            RemoveCmd.init
+                args
+                { fs = dir
+                }
+                |> map RemoveProc RemoveProcMsg
+        
+        Concat (ConcatCmd.Concat args) ->
+            ConcatCmd.init
+                args
+                { fs = dir
+                }
+                |> map ConcatProc ConcatProcMsg
+                
+        CmdErr err ->
+            (State.Error Stay err, Cmd.none)
+                
+        _ ->
+            (State.Exit Stay, Cmd.none)
+                
 
 run : ProcessMsg -> Process -> (ProcState Process, Cmd ProcessMsg)
 run msg proc =
     case (msg, proc) of
-        (Init, LinkProc linkProc) ->
-            LinkCmd.run LinkCmd.NoOp linkProc
-                |> Tuple.mapFirst (State.map LinkProc)
-                |> Tuple.mapSecond (Cmd.map LinkProcMsg)
+        (HelpProcMsg helpMsg, HelpProc helpProc) ->
+            HelpCmd.run helpMsg helpProc
+                |> map HelpProc HelpProcMsg
 
         (LinkProcMsg linkMsg, LinkProc linkProc) ->
             LinkCmd.run linkMsg linkProc
-                |> Tuple.mapFirst (State.map LinkProc)
-                |> Tuple.mapSecond (Cmd.map LinkProcMsg)
+                |> map LinkProc LinkProcMsg
+        
+        (WhoAmIProcMsg whoamiMsg, WhoAmIProc whoamiProc) ->
+            WhoAmICmd.run whoamiMsg whoamiProc
+                |> map WhoAmIProc WhoAmIProcMsg
                 
+        (WorkProcMsg workMsg, WorkProc workProc) ->
+            WorkCmd.run workMsg workProc
+                |> map WorkProc WorkProcMsg
+                
+        (TouchProcMsg touchMsg, TouchProc touchProc) ->
+            TouchCmd.run touchMsg touchProc
+                |> map TouchProc TouchProcMsg
+                
+        (ChangeDirProcMsg changeDirMsg, ChangeDirProc changeDirProc) ->
+            ChangeDirCmd.run changeDirMsg changeDirProc
+                |> map ChangeDirProc ChangeDirProcMsg
+                
+        (MakeDirProcMsg makeDirMsg, MakeDirProc makeDirProc) ->
+            MakeDirCmd.run makeDirMsg makeDirProc
+                |> map MakeDirProc MakeDirProcMsg
+            
+        (RemoveProcMsg removeMsg, RemoveProc removeProc) ->
+            RemoveCmd.run removeMsg removeProc
+                |> map RemoveProc RemoveProcMsg
+        
+        (ConcatProcMsg concatMsg, ConcatProc concatProc) ->
+            ConcatCmd.run concatMsg concatProc
+                |> map ConcatProc ConcatProcMsg
+
         _ ->
             (State.Exit Stay, Cmd.none)
 
 
-view : Process -> Html msg
-view cmd =
-    case cmd of
-        LinkProc linkProc ->
-            LinkCmd.view linkProc
+view : Process -> Html ProcessMsg
+view proc =
+    case proc of
+        LinkProc proc_ ->
+            LinkCmd.view proc_
+        
+        HelpProc proc_ ->
+            HelpCmd.view proc_
+            
+        WhoAmIProc proc_ ->
+            WhoAmICmd.view proc_
+            
+        WorkProc proc_ ->
+            WorkCmd.view proc_
+            
+        ListProc proc_ ->
+            ListCmd.view proc_
+            
+        TouchProc proc_ ->
+            TouchCmd.view proc_
+                
+        ChangeDirProc proc_ ->
+            ChangeDirCmd.view proc_
+
+        MakeDirProc proc_ ->
+            MakeDirCmd.view proc_
+        
+        RemoveProc proc_ ->
+            RemoveCmd.view proc_
+
+        ConcatProc proc_ ->
+            ConcatCmd.view proc_
             
         Stay ->
             Html.text ""
+        
 
-        -- Help _ ->
-        --     HelpCmd.view
-        --         "Welcome to the uzimaru's portfolio site!!"
-        --         "[Basic commands]"
-        --         [ HelpCmd.info
-        --         , WhoAmICmd.info
-        --         , WorkCmd.info
-        --         , LinkCmd.info
-        --         ]
+getFS : Process -> Maybe (Zipper FileSystem)
+getFS proc =
+    case proc of
+        TouchProc proc_ ->
+            Just proc_.fs
 
-        -- Work workCmd ->
-        --     WorkCmd.view
-        --         workCmd
-        --         (Dict.fromList
-        --             [ ( "WeatherApp", ("WeatherApp made by Elm.", "https://uzimaru0000.github.io/elm-weather-app") )
-        --             , ( "UniTEA", ("Implementation of The Elm Architecture for Unity3D", "https://github.com/uzimaru0000/UniTEA") )
-        --             , ( "TabClock", ("Chrome extension to display clock on NewTab", "https://github.com/uzimaru0000/TabClock") )
-        --             , ( "VR", ("Summary made with VR.", "https://twitter.com/i/moments/912461981851860992") )
-        --             , ( "Splash", ("Applications that simulate ink splash", "https://splash.uzimaru.com/"))
-        --             , ( "clumsy", ("Clone of git implemented in rust.", "https://github.com/uzimaru0000/clumsy"))
-        --             ]
-        --         )
+        ChangeDirProc proc_ ->
+            Just proc_.fs
+            
+        MakeDirProc proc_ ->
+            Just proc_.fs
+        
+        RemoveProc proc_ ->
+            Just proc_.fs
+            
+        _ ->
+            Nothing
+        
 
-        -- WhoAmI whoamiCmd ->
-        --     WhoAmICmd.view
-        --         whoamiCmd
-        --         [ ( "Name", "Shuji Oba (uzimaru)" )
-        --         , ( "Age", "22" )
-        --         , ( "Hobby", "Cooking, Programming" )
-        --         , ( "Likes", "WebFrontend, Elm, Rust" )
-        --         ]
-
-        -- List listCmd ->
-        --     ListCmd.view
-        --         listCmd
-        --         fileSystem
-
-        -- ChangeDir _ ->
-        --     ChangeDirCmd.view
-
-        -- MakeDir makeDirCmd ->
-        --     MakeDirCmd.view makeDirCmd
-
-        -- Touch touchCmd ->
-        --     TouchCmd.view touchCmd
-
-        -- Remove removeCmd ->
-        --     RemoveCmd.view removeCmd
-        -- 
-        -- Concat concatCmd ->
-        --     ConcatCmd.view concatCmd fileSystem
-
-        -- CmdErr err ->
-        --     Html.div [] [ Html.text err ]
+map : (proc -> Process) -> (msg -> ProcessMsg) -> (ProcState proc, Cmd msg) -> (ProcState Process, Cmd ProcessMsg)
+map procFunc msgFunc (st, cmd) =
+    (State.map procFunc st, Cmd.map msgFunc cmd)
 
 
 complementList : List String

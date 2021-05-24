@@ -29,7 +29,6 @@ update msg model =
                 (state, procEffect) =
                     parseCommand model.input
                         |> \c -> Cmd.init c model.fileSystem
-                        |> Cmd.run Cmd.Init
                         
                 (newModel, effect)
                     = update (RunProcess state) model
@@ -67,14 +66,22 @@ update msg model =
                                | process = p
                             }
 
-                        _ ->
+                        Exit p ->
+                            { model
+                               | fileSystem = Cmd.getFS p |> Maybe.withDefault model.fileSystem
+                               , history = model.history ++ [ History model.fileSystem model.input state ]
+                               , process = Cmd.Stay
+                               , input = ""
+                            }
+                        
+                        Error _ _ ->
                             { model
                                | history = model.history ++ [ History model.fileSystem model.input state ]
                                , process = Cmd.Stay
                                , input = ""
                             }
             in
-            (newModel
+            ( newModel
             , [ tarminalJumpToBotton "tarminal"
               , focus
               ] |> Cmd.batch

@@ -7,6 +7,7 @@ import Html exposing (Html)
 import Html.Attributes as Attr
 import Dict exposing (Dict(..))
 import Port
+import Command.State exposing (ProcState)
 
 
 type Work
@@ -18,6 +19,22 @@ type alias Args =
     , yes : Bool
     , param : Maybe String
     }
+    
+
+type alias Flags =
+    { works : Dict String (String, String)  
+    }
+
+
+type alias Proc =
+    { help : Bool
+    , yes : Bool
+    , param : Maybe String
+    , works : Dict String (String, String) 
+    }
+    
+
+type Msg = NoOp
 
 
 parser : Parser Work
@@ -68,31 +85,47 @@ info =
                 }
             ]
         }
-
-run : Work -> Dict String (String, String) -> Cmd msg
-run (Work args) urlDict =
-    if args.yes then
-        args.param
-            |> Maybe.andThen (\x -> Dict.get x urlDict)
-            |> Maybe.map (\(_, url) -> Port.openExternalLink url)
-            |> Maybe.withDefault Cmd.none
-    else
-        Cmd.none
         
 
-view : Work -> Dict String (String, String) -> Html msg
-view (Work args) links =
-    if args.help then
+init : Args -> Flags -> (ProcState Proc, Cmd Msg)
+init args flags =
+    ( Command.State.Exit
+        { help = args.help
+        , yes = args.yes
+        , param = args.param
+        , works = flags.works
+        }
+    , if args.yes then
+        args.param
+            |> Maybe.andThen (\x -> Dict.get x flags.works)
+            |> Maybe.map (\(_, url) -> Port.openExternalLink url)
+            |> Maybe.withDefault Cmd.none
+      else
+        Cmd.none
+    )
+
+
+run : Msg -> Proc -> (ProcState Proc, Cmd Msg)
+run _ proc =
+    ( Command.State.Exit proc
+    , Cmd.none
+    )
+        
+
+view : Proc -> Html msg
+view { help, param, works } =
+    if help then
         let
             (HelpInfo inner) = info
         in
         Help.view
-            inner.info
-            "[options]"
-            inner.detailInfo
+            { message = inner.info
+            , label = "[options]"
+            , infos = inner.detailInfo
+            }
     else
-        args.param
-            |> Maybe.andThen (\x -> Dict.get x links)
+        param
+            |> Maybe.andThen (\x -> Dict.get x works)
             |> Maybe.map
                 (\(_, url) ->
                     Html.div [ Attr.class "list" ]
@@ -102,7 +135,7 @@ view (Work args) links =
                 )
             |> Maybe.withDefault
                 (Html.div [ Attr.class "work" ]
-                    [ links
+                    [ works
                         |> Dict.toList
                         |> List.map
                             (\( title, (subTitle, url) ) ->

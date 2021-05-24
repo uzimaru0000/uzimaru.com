@@ -8,6 +8,7 @@ import Lazy.Tree as Tree
 import Lazy.Tree.Zipper as Zipper exposing (Zipper(..))
 import FileSystem as FS exposing (FileSystem(..))
 import Bytes.Encode as BE
+import Command.State exposing (ProcState)
 
 
 type Touch
@@ -18,6 +19,21 @@ type alias Args =
     { help : Bool
     , param : Maybe String
     }
+    
+
+type alias Flags =
+    { fs : Zipper FileSystem
+    }
+    
+
+type alias Proc =
+    { help : Bool
+    , param : Maybe String
+    , fs : Zipper FileSystem
+    }
+    
+
+type Msg = Never
 
 
 parser : Parser Touch
@@ -51,41 +67,63 @@ info =
         }
 
 
-run : Touch -> Zipper FileSystem -> Result String (Zipper FileSystem)
-run (Touch args) dir =
+init : Args -> Flags -> (ProcState Proc, Cmd Msg)
+init args flags =
     let
         dirName = Maybe.withDefault "" args.param
 
         exist = 
-            dir
+            flags.fs
                 |> Zipper.children
                 |> List.any (FS.getName >> (==) dirName)
+                
+        proc =
+            { help = args.help
+            , param = args.param
+            , fs = flags.fs
+            }
     in
         if args.help then
-            Ok dir
+            ( Command.State.Exit proc
+            , Cmd.none
+            )
         else if exist then
-            Err "mkdir: File exists"
+            ( Command.State.Error proc "touch: File exists"
+            , Cmd.none
+            )
         else
-            dir
-                |> Zipper.insert
-                    ({ info = { name = dirName }
-                     , data = BE.encode <| BE.string ""
-                     }
-                        |> File_
-                        |> Tree.singleton
-                    )
-                |> Ok
+            ( Command.State.Exit
+                { proc
+                    | fs =
+                        proc.fs
+                            |> Zipper.insert
+                                ({ info = { name = dirName }
+                                 , data = BE.encode <| BE.string ""
+                                 }
+                                    |> File_
+                                    |> Tree.singleton
+                                )
+                }
+            , Cmd.none
+            )
 
 
-view : Touch -> Html msg
-view (Touch args) =
-    if args.help then
+run : Msg -> Proc -> (ProcState Proc, Cmd Msg)
+run _ proc =
+    (Command.State.Exit proc, Cmd.none)
+
+
+view : Proc -> Html msg
+view { help } =
+    if help then
         let
             (HelpInfo inner) = info
         in
         Help.view
-            inner.name
-            "[options]"
-            inner.detailInfo
+            { message = inner.info
+            , label = "[options]"
+            , infos = inner.detailInfo
+            }
+
     else
         Html.text ""

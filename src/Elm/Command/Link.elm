@@ -90,23 +90,26 @@ info =
         }
 
 
-init : Args -> Flags -> Proc
+init : Args -> Flags -> (ProcState Proc, Cmd Msg)
 init args urls =
-    { args = args
-    , urls = urls
-    }
+    ( State.Exit
+        { args = args
+        , urls = urls
+        }
+    , if args.yes then
+        args.param
+            |> Maybe.andThen (\x -> Dict.get x urls)
+            |> Maybe.map Port.openExternalLink
+            |> Maybe.withDefault Cmd.none
+      else
+        Cmd.none
+    )
     
 
 run : Msg -> Proc -> (ProcState Proc, Cmd Msg)
 run _ proc =
     ( State.Exit proc
-    , if proc.args.yes then
-        proc.args.param
-            |> Maybe.andThen (\x -> Dict.get x proc.urls)
-            |> Maybe.map Port.openExternalLink
-            |> Maybe.withDefault Cmd.none
-      else
-        Cmd.none
+    , Cmd.none
     )
 
 
@@ -117,9 +120,10 @@ view { args, urls } =
             (HelpInfo inner) = info
         in
         Help.view
-            inner.info
-            "[options]"
-            inner.detailInfo
+            { message = inner.info
+            , label = "[options]"
+            , infos = inner.detailInfo
+            }
     else
         Html.div [ Attr.class "links" ]
             [ args.param

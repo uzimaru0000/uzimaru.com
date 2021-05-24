@@ -4,14 +4,12 @@ import Browser.Dom as Dom
 import Command exposing (..)
 import Command.Help as HelpCmd
 import FileSystem as FS exposing (FileSystem(..))
-import Html exposing (Html)
 import Json.Decode as JD
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import Task
-import FileSystem exposing (Directory)
 import Bytes.Encode as BE
 import Utils
-import Command.State as State exposing (ProcState)
+import Command.State exposing (ProcState)
 
 
 type History = History (Zipper FileSystem) String (ProcState Process)
@@ -94,12 +92,16 @@ init value =
                 |> Result.withDefault initFileSystem
                 |> FS.builder
                 |> Zipper.fromTree
+            
+        (helpProc, effect) = Command.init (Command.Help HelpCmd.Help) initDir
     in
     ( { input = ""
-      , history = [ History initDir "help" (State.Exit Stay) ]
+      , history = [ History initDir "help" helpProc ]
       , fileSystem = initDir
       , complement = Nothing
       , process = Stay
       }
-    , Task.attempt (\_ -> NoOp) <| Dom.focus "prompt"
+    , [ Task.attempt (\_ -> NoOp) <| Dom.focus "prompt"
+      , effect |> Cmd.map ProcessMsg
+      ] |> Cmd.batch
     )

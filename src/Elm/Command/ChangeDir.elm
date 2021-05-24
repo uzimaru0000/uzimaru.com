@@ -7,6 +7,7 @@ import Command.Help exposing (HelpInfo(..))
 import Html exposing (Html)
 import Lazy.Tree.Zipper as Zipper exposing (Zipper(..))
 import FileSystem as FS exposing (FileSystem(..), Error(..))
+import Command.State exposing (ProcState)
 
 
 type ChangeDir
@@ -16,7 +17,18 @@ type ChangeDir
 type alias Args =
     { param : Maybe String
     }
+    
 
+type alias Flags =
+    { fs : Zipper FileSystem
+    }
+    
+
+type alias Proc =
+    { param : Maybe String
+    , fs : Zipper FileSystem
+    }
+    
 
 parser : Parser ChangeDir
 parser =
@@ -50,25 +62,51 @@ info =
                 }
             ]
         }
+        
+
+init : Args -> Flags -> (ProcState Proc, Cmd msg)
+init args flags =
+    let
+        cd =
+            case args.param of
+                Just path ->
+                    FS.cwd (String.split "/" path) flags.fs
+                        |> Result.mapError
+                            (\x ->
+                                case x of
+                                    TargetIsFile ->
+                                        "cd: '" ++ path ++ "' is not a FileSystem"
+                                    _ ->
+                                        "cd: The FileSystem '" ++ path ++ "' does not exist"
+                            )
+
+                Nothing ->
+                    Ok <| Zipper.root flags.fs
+    in
+        case cd of
+            Ok fs ->
+                ( Command.State.Exit
+                    { fs = fs
+                    , param = args.param
+                    }
+                , Cmd.none
+                )
+            
+            Err err ->
+                ( Command.State.Error
+                    { fs = flags.fs
+                    , param = args.param
+                    }
+                    err
+                , Cmd.none
+                )
 
 
-run : ChangeDir -> Zipper FileSystem -> Result String (Zipper FileSystem)
-run (ChangeDir args) dir =
-    case args.param of
-        Just path ->
-            FS.cwd (String.split "/" path) dir
-                |> Result.mapError
-                    (\x ->
-                        case x of
-                            TargetIsFile ->
-                                "cd: '" ++ path ++ "' is not a FileSystem"
-                            _ ->
-                                "cd: The FileSystem '" ++ path ++ "' does not exist"
-                    )
-        Nothing ->
-            Ok <| Zipper.root dir
+run : Never -> Proc -> (ProcState Proc, Cmd msg)
+run _ proc =
+    (Command.State.Exit proc, Cmd.none)
 
 
-view : Html msg
-view =
+view : Proc -> Html msg
+view _ =
     Html.text ""

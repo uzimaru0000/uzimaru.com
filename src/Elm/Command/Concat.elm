@@ -1,13 +1,11 @@
 module Command.Concat exposing (..)
 import Parser exposing (Parser, (|.), (|=))
 import Utils
-import Parser exposing (succeed)
 import Command.Help as Help exposing (HelpInfo(..))
-import Lazy.Tree as Tree
-import Lazy.Tree.Zipper as Zipper exposing (Zipper(..))
+import Lazy.Tree.Zipper exposing (Zipper(..))
 import FileSystem as FS exposing (FileSystem(..), Error(..))
 import Html exposing (..)
-import Debug
+import Command.State exposing (ProcState)
 
 type Concat
     = Concat Args
@@ -16,6 +14,19 @@ type alias Args =
     { help : Bool
     , param : Maybe String
     }
+    
+
+type alias Flags =
+    { fs : Zipper FileSystem
+    }
+    
+
+type alias Proc =
+    { help : Bool
+    , param : Maybe String
+    , fs : Zipper FileSystem
+    }
+
 
 parser : Parser Concat
 parser =
@@ -23,6 +34,7 @@ parser =
         |. Parser.keyword "cat"
         |. Parser.spaces
         |= argsParser { help = False, param = Nothing }
+
 
 argsParser : Args -> Parser Args
 argsParser =
@@ -37,6 +49,7 @@ argsParser =
                     |. Parser.spaces
                 ]
 
+
 info : HelpInfo
 info =
     HelpInfo
@@ -44,20 +57,39 @@ info =
         , info = "change file access and modification times"
         , detailInfo = []
         }
+        
+
+init : Args -> Flags -> (ProcState Proc, Cmd msg)
+init args flags =
+    ( Command.State.Exit
+        { help = args.help
+        , param = args.param
+        , fs = flags.fs
+        }
+    , Cmd.none
+    )
+    
+
+run : Never -> Proc -> (ProcState Proc, Cmd msg)
+run _ proc =
+    ( Command.State.Exit proc
+    , Cmd.none
+    )
 
 
-view : Concat -> Zipper FileSystem -> Html msg
-view (Concat args) fs =
-    if args.help then
+view : Proc -> Html msg
+view { help, param, fs } =
+    if help then
         let
             (HelpInfo inner) = info
         in
         Help.view
-            inner.name
-            "[options]"
-            inner.detailInfo
+            { message = inner.info
+            , label = "[options]"
+            , infos = inner.detailInfo
+            }
     else
-        case args.param |> Maybe.map (String.split "/") of
+        case param |> Maybe.map (String.split "/") of
             Just path ->
                 FS.readFile path fs
                     |> Result.map .data
