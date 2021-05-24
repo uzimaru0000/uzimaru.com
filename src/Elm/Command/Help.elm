@@ -1,6 +1,11 @@
 module Command.Help exposing
     ( Help(..)
     , HelpInfo(..)
+    , Flags
+    , Proc
+    , Msg(..)
+    , init
+    , run
     , view
     , viewHelper
     , info
@@ -10,12 +15,31 @@ module Command.Help exposing
 import Html exposing (Html)
 import Html.Attributes as Attr
 import Parser exposing ((|.), (|=), Parser)
-import Utils
-import Dict exposing (Dict)
+import Command.State as State exposing (ProcState)
 
 
 type Help
     = Help
+    
+
+type alias Proc =
+    { message : String
+    , label : String
+    , infos : List HelpInfo
+    }
+
+
+type alias Args = ()
+
+
+type alias Flags =
+    { message : String
+    , label : String
+    , infos : List HelpInfo
+    }
+
+
+type Msg = NoOp
 
 
 type HelpInfo =
@@ -40,10 +64,26 @@ info =
         , info = "Show how to use the command."
         , detailInfo = []
         }
+        
+
+init : Args -> Flags -> (ProcState Proc, Cmd Msg)
+init _ flags =
+    (State.Exit
+        { message = flags.message
+        , label = flags.label
+        , infos = flags.infos
+        }
+    , Cmd.none
+    )
 
 
-view : String -> String -> List HelpInfo -> Html msg
-view message label infos =
+run : Msg -> Proc -> (ProcState Proc, Cmd Msg)
+run _ proc =
+    ( State.Exit proc, Cmd.none )
+
+
+view : Proc -> Html msg
+view { message, label, infos } =
     Html.div [ Attr.class "help" ]
         [ Html.div [ Attr.class "message" ]
             [ Html.text message ]

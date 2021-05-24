@@ -7,6 +7,7 @@ import Html exposing (Html)
 import Lazy.Tree as Tree
 import Lazy.Tree.Zipper as Zipper exposing (Zipper(..))
 import FileSystem as FS exposing (FileSystem(..))
+import Command.State exposing (ProcState)
 
 
 type MakeDir
@@ -16,6 +17,18 @@ type MakeDir
 type alias Args =
     { param : Maybe String
     , help : Bool
+    }
+    
+
+type alias Flags =
+    { fs : Zipper FileSystem
+    }
+    
+
+type alias Proc =
+    { param : Maybe String
+    , help : Bool
+    , fs : Zipper FileSystem
     }
 
 
@@ -61,35 +74,52 @@ info =
         }
 
 
-run : MakeDir -> Zipper FileSystem -> Result String (Zipper FileSystem)
-run (MakeDir args) dir =
+init : Args -> Flags -> (ProcState Proc, Cmd msg)
+init args flags =
     let
         dirName = Maybe.withDefault "" args.param
 
         exist = 
-            dir
+            flags.fs
                 |> Zipper.children
                 |> List.any (FS.getName >> (==) dirName)
+                
+        proc =
+            { help = args.help
+            , param = args.param
+            , fs = flags.fs
+            } 
     in
         if args.help then
-            Ok dir
+            (Command.State.Exit proc, Cmd.none)
         else if exist then
-            Err "mkdir: File exists"
+            (Command.State.Error proc "mkdir: File exists", Cmd.none)
         else
-            dir
-                |> Zipper.insert (Tree.singleton <| Directory_ { info = { name = dirName }, children = [] })
-                |> Ok
+            (Command.State.Exit
+                { proc
+                    | fs =
+                        proc.fs
+                            |> Zipper.insert (Tree.singleton <| Directory_ { info = { name = dirName }, children = [] })
+                }
+            , Cmd.none
+            )
 
 
-view : MakeDir -> Html msg
-view (MakeDir args) =
-    if args.help then
+run : Never -> Proc -> (ProcState Proc, Cmd msg)
+run _ proc =
+    (Command.State.Exit proc, Cmd.none)
+
+
+view : Proc -> Html msg
+view { help } =
+    if help then
         let
             (HelpInfo inner) = info
         in
         Help.view
-            inner.info
-            "[options]"
-            inner.detailInfo
+            { message = inner.info
+            , label = "[options]"
+            , infos = inner.detailInfo
+            }
     else
         Html.text ""

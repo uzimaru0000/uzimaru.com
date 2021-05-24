@@ -8,6 +8,7 @@ import Dict exposing (Dict)
 import FileSystem exposing (FileSystem(..))
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import Command.Help exposing (HelpInfo(..))
+import Command.State exposing (ProcState)
 
 type List
     = List Args
@@ -17,6 +18,22 @@ type alias Args =
     , all : Bool
     , param : Maybe String
     }
+    
+
+type alias Flags =
+    { fs : Zipper FileSystem
+    }
+    
+
+type alias Proc =
+    { long : Bool
+    , all : Bool
+    , param : Maybe String
+    , fs : Zipper FileSystem
+    }
+    
+
+type Msg = NoOp
 
 
 parser : Parser List
@@ -72,12 +89,29 @@ info =
                 }
             ]
         }
+        
+
+init : Args -> Flags -> (ProcState Proc, Cmd Msg)
+init args flags =
+    ( Command.State.Exit
+        { long = args.long
+        , all = args.all
+        , param = args.param
+        , fs = flags.fs
+        }
+    , Cmd.none
+    )
+    
+
+run : Msg -> Proc -> (ProcState Proc, Cmd Msg)
+run _ proc =
+    ( Command.State.Exit proc, Cmd.none )
 
 
-view : List -> Zipper FileSystem -> Html msg
-view (List args) dir =
+view : Proc -> Html msg
+view { fs } =
     Html.div [ Attr.class "ls" ]
-        [ dir
+        [ fs
             |> Zipper.children
             |> List.map dirItem
             |> Html.ul []
