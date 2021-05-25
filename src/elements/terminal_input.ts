@@ -5,11 +5,14 @@ export class TerminalInput extends LitElement {
     selectionStart: number = 0
     @property({type: Number})
     selectionEnd: number = 0
+    
     _value: string = ""
+    _isFocus: boolean = false
 
     static get properties() {
         return {
-            value: { type: String }
+            value: { type: String },
+            isFocus: { type: Boolean }
         }
     }
 
@@ -22,12 +25,26 @@ export class TerminalInput extends LitElement {
 
     get value() { return this._value }
 
+    set isFocus(value) {
+        const oldVal = this.isFocus
+        this._isFocus = value
+        this.requestUpdate('isFocus', oldVal)
+    }
+    
+    get isFocus() { return this._isFocus }
+    
     constructor() {
         super()
     }
 
     focus() {
+        this.isFocus = true
         this.shadowRoot?.querySelector('input')?.focus()
+    }
+
+    blur() {
+        this.isFocus = false
+        this.shadowRoot?.querySelector('input')?.blur()
     }
 
     static get styles() {
@@ -55,6 +72,10 @@ export class TerminalInput extends LitElement {
                 background: currentColor;
                 white-space: pre;
             }
+
+            .disable {
+                display: none;
+            }
         `
     }
 
@@ -67,7 +88,7 @@ export class TerminalInput extends LitElement {
                     @keydown="${this.caretUpdate}"
                     @select="${this.caretUpdate}"
                 >
-                <span>${this.beforeString}<span class="caret">${this.currentChar}</span>${this.afterString}</span>
+                <span>${this.beforeString}<span class="caret ${!this.isFocus ? 'disable' : ''}">${this.currentChar}</span>${this.afterString}</span>
             </div>
         `
     }

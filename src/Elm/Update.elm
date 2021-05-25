@@ -59,32 +59,49 @@ update msg model =
 
         RunProcess state ->
             let
-                newModel =
+                (newModel, effect) =
                     case state of
                         Running p ->
-                            { model
+                            ({ model
                                | process = p
                             }
+                            , blur
+                            )
+                        
 
                         Exit p ->
-                            { model
+                            ({ model
                                | fileSystem = Cmd.getFS p |> Maybe.withDefault model.fileSystem
                                , history = model.history ++ [ History model.fileSystem model.input state ]
                                , process = Cmd.Stay
                                , input = ""
                             }
+                            , focus
+                            )
                         
                         Error _ _ ->
-                            { model
+                            ({ model
                                | history = model.history ++ [ History model.fileSystem model.input state ]
                                , process = Cmd.Stay
                                , input = ""
                             }
+                            , focus
+                            )
             in
             ( newModel
             , [ tarminalJumpToBotton "tarminal"
-              , focus
+              , effect
               ] |> Cmd.batch
+            )
+        
+        ProcessMsg procMsg ->
+            let
+                (state, procEffect) = Cmd.run procMsg model.process
+                
+                (newModel, effect) = update (RunProcess state) model
+            in
+            ( newModel
+            , [ Cmd.map ProcessMsg procEffect, effect ] |> Cmd.batch
             )
 
         PrevCommand ->
@@ -103,6 +120,22 @@ update msg model =
               }
             , Cmd.none
             )
+            
+        Cancel ->
+            case model.process of
+                Cmd.Stay ->
+                    (model, Cmd.none)
+                
+                _ ->
+                    ( { model
+                        | process = Cmd.Stay
+                        , input = ""
+                        , history =
+                            model.history ++
+                            [ History model.fileSystem model.input (Command.State.Exit model.process) ]
+                      }
+                    , focus
+                    )
 
         Clear ->
             ( { model | history = [] }
@@ -135,3 +168,7 @@ tarminalJumpToBotton id =
 focus : Cmd Msg
 focus =
     Task.attempt (\_ -> NoOp) <| Browser.Dom.focus "prompt"
+    
+blur : Cmd Msg
+blur =
+    Task.attempt (\_ -> NoOp) <| Browser.Dom.blur "prompt"

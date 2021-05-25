@@ -30,9 +30,8 @@ view model =
                 , div
                     [ Attr.id "tarminal" ] <|
                         (history model.history) ++
-                        [ case model.process of
-                            Command.Stay -> stdin model.input model.fileSystem
-                            _ -> Command.view model.process |> Html.map ProcessMsg
+                        [ stdin model.input model.fileSystem
+                        , Command.view model.process |> Html.map ProcessMsg
                         ]
                 ]
         ]

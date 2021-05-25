@@ -33,6 +33,8 @@ type Msg
     | PrevCommand
     | Clear
     | Focus
+    | Cancel
+    | Blur
     | ClickHeader Bool
 
 

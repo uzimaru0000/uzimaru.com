@@ -8,6 +8,7 @@ module Command exposing
     , run
     , complement
     , getFS
+    , subscriptions
     )
 
 import Command.Help as HelpCmd
@@ -20,6 +21,7 @@ import Command.MakeDir as MakeDirCmd
 import Command.Touch as TouchCmd
 import Command.Remove as RemoveCmd
 import Command.Concat as ConcatCmd
+import Command.Sleep as SleepCmd
 import FileSystem exposing (FileSystem(..))
 import Html exposing (..)
 import Lazy.Tree.Zipper exposing (Zipper)
@@ -41,6 +43,7 @@ type Command
     | Touch TouchCmd.Touch
     | Remove RemoveCmd.Remove
     | Concat ConcatCmd.Concat
+    | Sleep SleepCmd.Sleep
 
     
 type Process
@@ -55,6 +58,7 @@ type Process
     | MakeDirProc MakeDirCmd.Proc
     | RemoveProc RemoveCmd.Proc
     | ConcatProc ConcatCmd.Proc
+    | SleepProc SleepCmd.Proc
 
 
 type ProcessMsg
@@ -68,6 +72,7 @@ type ProcessMsg
     | MakeDirProcMsg Never
     | RemoveProcMsg Never
     | ConcatProcMsg Never
+    | SleepProcMsg SleepCmd.Msg
 
 
 parser : Parser Command
@@ -85,6 +90,7 @@ parser =
         , TouchCmd.parser |> Parser.map Touch
         , RemoveCmd.parser |> Parser.map Remove
         , ConcatCmd.parser |> Parser.map Concat
+        , SleepCmd.parser |> Parser.map Sleep
         ]
 
 
@@ -187,6 +193,12 @@ init cmd dir =
                 { fs = dir
                 }
                 |> map ConcatProc ConcatProcMsg
+            
+        Sleep (SleepCmd.Sleep args) ->
+            SleepCmd.init
+                args
+                ()
+                |> map SleepProc SleepProcMsg
                 
         CmdErr err ->
             (State.Error Stay err, Cmd.none)
@@ -233,6 +245,10 @@ run msg proc =
         (ConcatProcMsg concatMsg, ConcatProc concatProc) ->
             ConcatCmd.run concatMsg concatProc
                 |> map ConcatProc ConcatProcMsg
+                
+        (SleepProcMsg sleepMsg, SleepProc sleepProc) ->
+            SleepCmd.run sleepMsg sleepProc
+                |> map SleepProc SleepProcMsg
 
         _ ->
             (State.Exit Stay, Cmd.none)
@@ -271,8 +287,22 @@ view proc =
         ConcatProc proc_ ->
             ConcatCmd.view proc_
             
+        SleepProc proc_ ->
+            SleepCmd.view proc_
+                |> Html.map SleepProcMsg
+            
         Stay ->
             Html.text ""
+            
+
+subscriptions : Process -> Sub ProcessMsg
+subscriptions proc =
+    case proc of
+        SleepProc proc_ ->
+            SleepCmd.subscriptions proc_
+                |> Sub.map SleepProcMsg
+
+        _ -> Sub.none
         
 
 getFS : Process -> Maybe (Zipper FileSystem)
