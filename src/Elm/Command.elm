@@ -129,7 +129,7 @@ init cmd dir =
                 args
                 { infos =
                     [ ( "Name", "Shuji Oba (uzimaru)" )
-                    , ( "Age", "22" )
+                    , ( "Age", "23" )
                     , ( "Hobby", "Cooking, Programming" )
                     , ( "Likes", "WebFrontend, Elm, Rust" )
                     ]
