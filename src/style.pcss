@@ -1,22 +1,24 @@
 @import url('https://fonts.googleapis.com/css?family=Press+Start+2P');
 
-$text-color: #88ff63;
-$link-color: #ffbb38;
-$header-height: 24px;
-$button-margin: 10px;
-$terminal-max-width: 1000px;
+:root {
+  --text-color: #88ff63;
+  --link-color: #ffbb38;
+  --header-height: 24px;
+  --button-margin: 10px;
+  --terminal-max-width: 1000px;
+}
 
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Press Start 2P', cursive;
-  color: $text-color;
+  font-family: 'Press Start 2P', sans-serif;
+  color: var(--text-color);
   font-size: 16px;
   line-height: 1.25rem;
 }
 
 pre {
-  font-family: 'Press Start 2P', cursive;
+  font-family: 'Press Start 2P', sans-serif;
 }
 
 #wrapper {
@@ -34,7 +36,7 @@ pre {
 #tarminal {
   padding: 16px;
   background: #282828;
-  height: calc(100% - #{$header-height});
+  height: calc(100% - var(--header-height));
   box-shadow: 0 0px 5px 0px rgba(0, 0, 0, 0.5);
   box-sizing: border-box;
   overflow: scroll;
@@ -50,9 +52,9 @@ pre {
 
   span {
     display: inline-block;
-    width: calc(#{$header-height} - #{$button-margin});
-    height: calc(#{$header-height} - #{$button-margin});
-    margin: calc(#{$button-margin} / 2);
+    width: calc(var(--header-height) - var(--button-margin));
+    height: calc(var(--header-height) - var(--button-margin));
+    margin: calc(var(--button-margin) / 2);
     border-radius: 50%;
   }
 
@@ -143,7 +145,7 @@ ul.list li {
 
 a {
   text-decoration: none;
-  color: $link-color;
+  color: var(--link-color);
   cursor: pointer;
 }
 
@@ -162,7 +164,7 @@ a:hover {
   }
 
   #tarminal {
-    height: calc(100% - #{$header-height});
+    height: calc(100% - var(--header-height));
     border-radius: 0;
   }
 }
