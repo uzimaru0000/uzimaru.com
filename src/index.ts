@@ -1,4 +1,6 @@
 import './style.pcss';
+import '@lrnwebcomponents/code-editor/code-editor.js';
+
 import { Elm } from './Elm/Main.elm';
 import { TerminalInput } from './elements/terminal_input';
 
