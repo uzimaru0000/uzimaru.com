@@ -125,25 +125,33 @@ view { args, urls } =
             , infos = inner.detailInfo
             }
     else
-        Html.div [ Attr.class "links" ]
-            [ args.param
-                |> Maybe.andThen (\x -> Dict.get x urls)
-                |> Maybe.map
-                    (\url ->
-                        Html.div [ Attr.class "list" ]
-                            [ Html.text "Opens the specified link : "
-                            , Html.a [ Attr.href url, Attr.target "_blink" ] [ Html.text url ]
+        args.param
+            |> Maybe.andThen (\x -> Dict.get x urls)
+            |> Maybe.map
+                (\url ->
+                    Html.div [ Attr.class "p-4" ]
+                        [ Html.text "Opens the specified link : "
+                        , Html.a
+                            [ Attr.href url
+                            , Attr.target "_blink"
+                            , Attr.class "text-yellow hover:underline"
                             ]
-                    )
-                |> Maybe.withDefault
-                    (urls
-                        |> Dict.toList
-                        |> List.map
-                            (\( title, url ) ->
-                                Html.li []
-                                    [ Html.a [ Attr.href url, Attr.target "_blink" ] [ Html.text title ]
+                            [ Html.text url ]
+                        ]
+                )
+            |> Maybe.withDefault
+                (urls
+                    |> Dict.toList
+                    |> List.map
+                        (\( title, url ) ->
+                            Html.li [ Attr.class "flex" ]
+                                [ Html.a
+                                    [ Attr.href url
+                                    , Attr.target "_blink"
+                                    , Attr.class "text-yellow hover:underline"
                                     ]
-                            )
-                        |> Html.ul [ Attr.class "list" ]
-                    )
-            ]
+                                    [ Html.text title ]
+                                ]
+                        )
+                    |> Html.ul [ Attr.class "p-4" ]
+                )

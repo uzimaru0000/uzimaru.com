@@ -4,7 +4,6 @@ import Html exposing (Html)
 import Html.Attributes as Attr
 import Parser exposing ((|.), (|=), Parser)
 import Utils
-import Dict exposing (Dict)
 import FileSystem exposing (FileSystem(..))
 import Lazy.Tree.Zipper as Zipper exposing (Zipper)
 import Command.Help exposing (HelpInfo(..))
@@ -110,12 +109,10 @@ run _ proc =
 
 view : Proc -> Html msg
 view { fs } =
-    Html.div [ Attr.class "ls" ]
-        [ fs
-            |> Zipper.children
-            |> List.map dirItem
-            |> Html.ul []
-        ]
+    fs
+        |> Zipper.children
+        |> List.map dirItem
+        |> Html.ul [ Attr.class "flex flex-wrap" ]
 
 
 dirItem : FileSystem -> Html cmd
@@ -123,10 +120,10 @@ dirItem fs =
     case fs of
         Directory_ dir ->
             Html.li
-                [ Attr.class "directory" ]
+                [ Attr.class "w-1/5 text-blue-500" ]
                 [ Html.text <| dir.info.name ++ "/" ]
 
         File_ file ->
             Html.li
-                [ Attr.class "file" ]
+                [ Attr.class "w-1/5 text-white" ]
                 [ Html.text file.info.name ]

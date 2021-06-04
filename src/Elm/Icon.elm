@@ -7,8 +7,7 @@ import Svg.Attributes as Attrs
 icon : Svg msg
 icon =
     Svg.svg
-        [ Attrs.width "512"
-        , Attrs.height "512"
+        [ Attrs.class "w-fill h-fill"
         , Attrs.viewBox "0 0 512 512"
         , Attrs.fill "#c3c3c3"
         ]
