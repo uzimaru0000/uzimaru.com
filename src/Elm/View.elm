@@ -6,11 +6,10 @@ import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Ev
 import Json.Decode as JD
-import Lazy.Tree.Zipper as Zipper exposing (Zipper)
+import Lazy.Tree.Zipper exposing (Zipper)
 import Model exposing (..)
 import CustomElement exposing (..)
 import Command.State as State exposing (ProcState(..))
-
 
 
 -- view
@@ -23,28 +22,25 @@ px str =
 
 view : Model -> Html Msg
 view model =
-    div [ Attr.id "wrapper" ]
+    div [ Attr.class "flex items-center justify-center h-screen" ]
         [ div
-            [ Attr.id "window" ]
-                [ header
+            [ Attr.class "h-4/5 w-4/5" ]
+                [ div
+                    [ Attr.class "bg-gray rounded-t-2xl p-2 pl-4" ]
+                    [ span [ Attr.class "bg-red mr-2 rounded-full inline-block w-4 h-4" ] []
+                    , span [ Attr.class "bg-yellow mr-2 rounded-full inline-block w-4 h-4" ] []
+                    , span [ Attr.class "bg-green mr-2 rounded-full inline-block w-4 h-4" ] []
+                    ]
                 , div
-                    [ Attr.id "tarminal" ] <|
+                    [ Attr.id "tarminal" 
+                    , Attr.class "bg-black rounded-b-2xl text-lightGreen p-8 font-sans text-base h-full overflow-y-scroll"
+                    ] <|
                         (history model.history) ++
                         [ stdin model.input model.fileSystem
                         , Command.view model.process |> Html.map ProcessMsg
                         ]
                 ]
-        ]
-
-
-header : Html Msg
-header =
-    div
-        [ Attr.id "header" ]
-        [ span [] []
-        , span [] []
-        , span [] []
-        ]
+            ]
 
 
 history : List History -> List (Html Msg)

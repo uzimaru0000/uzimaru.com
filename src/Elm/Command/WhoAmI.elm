@@ -2,7 +2,7 @@ module Command.WhoAmI exposing (..)
 
 import Parser exposing (Parser, (|=), (|.))
 import Utils
-import Html exposing (Html, text)
+import Html exposing (Html)
 import Html.Attributes as Attr
 import Command.Help as Help exposing (HelpInfo(..))
 import Icon exposing (icon)
@@ -91,10 +91,17 @@ view { help, infos } =
             , infos = inner.detailInfo
             } 
     else
-        Html.div [ Attr.class "whoami" ]
-            [ Html.figure [] [ icon ]
+        Html.div [ Attr.class "flex p-4" ]
+            [ Html.figure [ Attr.class "w-1/5 mr-4" ] [ icon ]
             , infos
-                |> List.map Utils.createList
-                |> Html.ul [ Attr.class "list" ]
+                |> List.map
+                    (\(a, b) ->
+                        Html.div
+                            [ Attr.class "flex w-full" ]
+                            [ Html.span [ Attr.class "w-1/5" ] [ Html.text a ]
+                            , Html.span [ Attr.class "w-4/5" ] [ Html.text b ]
+                            ]
+                    )
+                |> Html.div [ Attr.class "flex flex-col justify-evenly w-4/5" ]
             ]
 

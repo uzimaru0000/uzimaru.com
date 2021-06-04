@@ -5,7 +5,9 @@ import Utils
 import Command.Help exposing (HelpInfo(..))
 import Command.State exposing (ProcState)
 import Html exposing (Html)
+import Html.Attributes as Attr
 import Time
+import Html exposing (progress)
 
 type Sleep = Sleep Args
 
@@ -21,6 +23,7 @@ type alias Flags = ()
 
 type alias Proc =
     { second : Int
+    , max : Int
     , help : Bool
     }
 
@@ -66,11 +69,13 @@ init args _ =
             Command.State.Running
                 { help = args.help
                 , second = s
+                , max = s
                 }
         Nothing ->
             Command.State.Error
                 { help = args.help
                 , second = -1
+                , max = -1
                 }
                 "need seconds"
     , Cmd.none
@@ -81,7 +86,7 @@ run : Msg -> Proc -> (ProcState Proc, Cmd Msg)
 run msg proc =
     case msg of
         Tick ->
-            (if proc.second - 1 > 0 then
+            (if proc.second - 1 >= 0 then
                 Command.State.Running
                     { proc | second = proc.second - 1 }
              else
@@ -92,7 +97,20 @@ run msg proc =
 
 view : Proc -> Html Msg
 view proc =
-    Html.div [] [ Html.text <| String.fromInt proc.second ]
+    Html.div
+        [ Attr.class "whitespace-pre" ]
+        [ Html.text <| bar 50 proc.second proc.max ]
+
+
+bar : Int -> Int -> Int -> String
+bar width n max =
+    let
+        unit = 1 / toFloat max
+        progress = toFloat width * (toFloat (max - n) * unit)
+        blank = String.repeat (width - floor progress) " "
+        gage = String.repeat (floor progress) "-"
+    in
+    "<" ++ gage ++ blank ++ ">"
     
 
 subscriptions : Proc -> Sub Msg

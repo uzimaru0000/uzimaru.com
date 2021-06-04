@@ -10,6 +10,7 @@ module Utils exposing
 import Parser exposing ((|.), Parser)
 import Set
 import Html exposing (Html)
+import Html.Attributes as Attr
 import Bytes exposing (Bytes)
 import Bytes.Decode as BD
 import Bytes.Encode as BE
@@ -58,7 +59,7 @@ longOptionParser opt =
 
 createList : ( String, String ) -> Html msg
 createList ( a, b ) =
-    Html.li []
+    Html.li [ Attr.class "flex block w-full" ]
         [ Html.span [] [ Html.text a ]
         , Html.span [] [ Html.text b ]
         ]

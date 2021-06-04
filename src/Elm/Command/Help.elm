@@ -84,12 +84,12 @@ run _ proc =
 
 view : Proc -> Html msg
 view { message, label, infos } =
-    Html.div [ Attr.class "help" ]
-        [ Html.div [ Attr.class "message" ]
+    Html.div [ Attr.class "p-8" ]
+        [ Html.div [ Attr.class "mb-8" ]
             [ Html.text message ]
         , Html.div []
             [ Html.text label ]
-        , Html.div [ Attr.class "detail" ]
+        , Html.div [ Attr.class "pl-8" ]
             ( infos
                 |> List.map viewHelper
             )
@@ -98,7 +98,7 @@ view { message, label, infos } =
 viewHelper : HelpInfo -> Html msg
 viewHelper (HelpInfo i) =
     Html.div
-        [ Attr.class "description" ]
+        [ Attr.class "mb-4" ]
         [ Html.div [] [ Html.text i.name ]
-        , Html.div [ Attr.class "info" ] [ Html.text i.info ]
+        , Html.div [ Attr.class "pl-8" ] [ Html.text i.info ]
         ]
