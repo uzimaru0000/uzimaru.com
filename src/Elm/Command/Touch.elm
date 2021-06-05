@@ -98,7 +98,7 @@ init args flags =
                         proc.fs
                             |> Zipper.insert
                                 ({ info = { name = dirName }
-                                 , data = BE.encode <| BE.string ""
+                                 , data = Utils.stringToBytes ""
                                  }
                                     |> File_
                                     |> Tree.singleton

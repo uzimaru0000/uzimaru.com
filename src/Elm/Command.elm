@@ -8,6 +8,7 @@ module Command exposing
     , run
     , complement
     , getFS
+    , isFullScreen
     , subscriptions
     )
 
@@ -22,6 +23,7 @@ import Command.Touch as TouchCmd
 import Command.Remove as RemoveCmd
 import Command.Concat as ConcatCmd
 import Command.Sleep as SleepCmd
+import Command.Egg as EggCmd
 import FileSystem exposing (FileSystem(..))
 import Html exposing (..)
 import Lazy.Tree.Zipper exposing (Zipper)
@@ -44,6 +46,7 @@ type Command
     | Remove RemoveCmd.Remove
     | Concat ConcatCmd.Concat
     | Sleep SleepCmd.Sleep
+    | Egg EggCmd.Egg
 
     
 type Process
@@ -59,6 +62,7 @@ type Process
     | RemoveProc RemoveCmd.Proc
     | ConcatProc ConcatCmd.Proc
     | SleepProc SleepCmd.Proc
+    | EggProc EggCmd.Proc
 
 
 type ProcessMsg
@@ -73,6 +77,7 @@ type ProcessMsg
     | RemoveProcMsg Never
     | ConcatProcMsg Never
     | SleepProcMsg SleepCmd.Msg
+    | EggProcMsg EggCmd.Msg    
 
 
 parser : Parser Command
@@ -91,6 +96,7 @@ parser =
         , RemoveCmd.parser |> Parser.map Remove
         , ConcatCmd.parser |> Parser.map Concat
         , SleepCmd.parser |> Parser.map Sleep
+        , EggCmd.parser |> Parser.map Egg
         ]
 
 
@@ -200,6 +206,12 @@ init cmd dir =
                 ()
                 |> map SleepProc SleepProcMsg
                 
+        Egg (EggCmd.Egg args) ->
+            EggCmd.init
+                args    
+                { fs = dir }
+                |> map EggProc EggProcMsg                
+            
         CmdErr err ->
             (State.Error Stay err, Cmd.none)
                 
@@ -250,6 +262,10 @@ run msg proc =
             SleepCmd.run sleepMsg sleepProc
                 |> map SleepProc SleepProcMsg
 
+        (EggProcMsg eggMsg, EggProc eggProc) ->
+            EggCmd.run eggMsg eggProc                
+                |> map EggProc EggProcMsg
+
         _ ->
             (State.Exit Stay, Cmd.none)
 
@@ -290,7 +306,11 @@ view proc =
         SleepProc proc_ ->
             SleepCmd.view proc_
                 |> Html.map SleepProcMsg
-            
+
+        EggProc proc_ ->
+            EggCmd.view proc_
+                |> Html.map EggProcMsg
+
         Stay ->
             Html.text ""
             
@@ -301,6 +321,10 @@ subscriptions proc =
         SleepProc proc_ ->
             SleepCmd.subscriptions proc_
                 |> Sub.map SleepProcMsg
+        
+        EggProc proc_ ->
+            EggCmd.subscriptions proc_
+                |> Sub.map EggProcMsg
 
         _ -> Sub.none
         
@@ -319,9 +343,19 @@ getFS proc =
         
         RemoveProc proc_ ->
             Just proc_.fs
+
+        EggProc proc_ ->
+            Just proc_.fs
             
         _ ->
             Nothing
+            
+    
+isFullScreen : Process -> Bool
+isFullScreen proc =
+    case proc of
+        EggProc _ -> True
+        _ -> False
         
 
 map : (proc -> Process) -> (msg -> ProcessMsg) -> (ProcState proc, Cmd msg) -> (ProcState Process, Cmd ProcessMsg)

@@ -12,6 +12,8 @@ module FileSystem exposing
     , pwd
     , cwd
     , readFile
+    , writeFile
+    , errorToString
     )
 
 import Html exposing (..)
@@ -158,6 +160,27 @@ readFile path dir =
                     File_ file -> Ok file
             )
 
+
+writeFile : List String -> Bytes -> Zipper FileSystem -> Result Error (Zipper FileSystem)
+writeFile path data dir =
+    dir
+        |> Zipper.openPath (\x y -> x == getName y) path
+        |> Result.mapError (always NotExist)
+        |> Result.map
+            (Zipper.updateItem
+                (\x ->
+                    case x of
+                        File_ file ->
+                            File_
+                                { file
+                                    | data = data   
+                                }
+                        _ ->
+                            x
+                )
+            )
+        |> Result.andThen (Zipper.up >> Result.fromMaybe NotExist)
+
 infoDecoder : JD.Decoder Info
 infoDecoder =
     JD.map Info
@@ -232,3 +255,18 @@ encoder dir =
                         |> JE.list JE.int
                   )
                 ]
+
+
+errorToString : Error -> String
+errorToString err =
+    case err of
+        NotExist ->
+            "File is not exist"
+        InvalidPath ->
+            "Path is invalid"
+        InvalidData ->
+            "Data is invalid"
+        TargetIsFile ->
+            "Target is file"
+        TargetIsFileSystem ->
+            "Target is directory"
