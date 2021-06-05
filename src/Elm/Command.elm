@@ -8,6 +8,7 @@ module Command exposing
     , run
     , complement
     , getFS
+    , isFullScreen
     , subscriptions
     )
 
@@ -208,7 +209,7 @@ init cmd dir =
         Egg (EggCmd.Egg args) ->
             EggCmd.init
                 args    
-                ()
+                { fs = dir }
                 |> map EggProc EggProcMsg                
             
         CmdErr err ->
@@ -342,9 +343,19 @@ getFS proc =
         
         RemoveProc proc_ ->
             Just proc_.fs
+
+        EggProc proc_ ->
+            Just proc_.fs
             
         _ ->
             Nothing
+            
+    
+isFullScreen : Process -> Bool
+isFullScreen proc =
+    case proc of
+        EggProc _ -> True
+        _ -> False
         
 
 map : (proc -> Process) -> (msg -> ProcessMsg) -> (ProcState proc, Cmd msg) -> (ProcState Process, Cmd ProcessMsg)

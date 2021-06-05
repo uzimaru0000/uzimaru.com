@@ -35,10 +35,14 @@ view model =
                     [ Attr.id "tarminal" 
                     , Attr.class "bg-black rounded-b-2xl text-lightGreen p-8 font-sans text-base h-full overflow-y-scroll"
                     ] <|
-                        (history model.history) ++
-                        [ stdin model.input model.fileSystem
-                        , Command.view model.process |> Html.map ProcessMsg
-                        ]
+                        if Command.isFullScreen model.process then
+                            [ Command.view model.process |> Html.map ProcessMsg
+                            ]
+                        else
+                            (history model.history) ++
+                            [ stdin model.input model.fileSystem
+                            , Command.view model.process |> Html.map ProcessMsg
+                            ]
                 ]
             ]
 
@@ -54,7 +58,11 @@ history =
                 , case state of
                     State.Running _ -> text ""
                     State.Error _ err -> div [] [ text err ]
-                    State.Exit p -> Command.view p |> Html.map ProcessMsg
+                    State.Exit p -> 
+                        if Command.isFullScreen p then
+                            text ""
+                        else
+                            Command.view p |> Html.map ProcessMsg
                 ]
         )
 
