@@ -24,6 +24,7 @@ import Command.Remove as RemoveCmd
 import Command.Concat as ConcatCmd
 import Command.Sleep as SleepCmd
 import Command.Egg as EggCmd
+import Command.Ulmus as UlmusCmd
 import FileSystem exposing (FileSystem(..))
 import Html exposing (..)
 import Lazy.Tree.Zipper exposing (Zipper)
@@ -47,6 +48,7 @@ type Command
     | Concat ConcatCmd.Concat
     | Sleep SleepCmd.Sleep
     | Egg EggCmd.Egg
+    | Ulmus UlmusCmd.Ulmus
 
     
 type Process
@@ -63,6 +65,7 @@ type Process
     | ConcatProc ConcatCmd.Proc
     | SleepProc SleepCmd.Proc
     | EggProc EggCmd.Proc
+    | UlmusProc UlmusCmd.Proc
 
 
 type ProcessMsg
@@ -77,7 +80,8 @@ type ProcessMsg
     | RemoveProcMsg Never
     | ConcatProcMsg Never
     | SleepProcMsg SleepCmd.Msg
-    | EggProcMsg EggCmd.Msg    
+    | EggProcMsg EggCmd.Msg   
+    | UlmusProcMsg UlmusCmd.Msg 
 
 
 parser : Parser Command
@@ -97,6 +101,7 @@ parser =
         , ConcatCmd.parser |> Parser.map Concat
         , SleepCmd.parser |> Parser.map Sleep
         , EggCmd.parser |> Parser.map Egg
+        , UlmusCmd.parser |> Parser.map Ulmus
         ]
 
 
@@ -211,6 +216,12 @@ init cmd dir =
                 args    
                 { fs = dir }
                 |> map EggProc EggProcMsg                
+
+        Ulmus (UlmusCmd.Ulmus args) ->
+            UlmusCmd.init
+                args
+                { fs = dir }
+                |> map UlmusProc UlmusProcMsg
             
         CmdErr err ->
             (State.Error Stay err, Cmd.none)
@@ -266,6 +277,10 @@ run msg proc =
             EggCmd.run eggMsg eggProc                
                 |> map EggProc EggProcMsg
 
+        (UlmusProcMsg ulmusMsg, UlmusProc ulmusProc) ->
+            UlmusCmd.run ulmusMsg ulmusProc
+                |> map UlmusProc UlmusProcMsg
+
         _ ->
             (State.Exit Stay, Cmd.none)
 
@@ -310,6 +325,10 @@ view proc =
         EggProc proc_ ->
             EggCmd.view proc_
                 |> Html.map EggProcMsg
+
+        UlmusProc proc_ ->
+            UlmusCmd.view proc_
+                |> Html.map UlmusProcMsg
 
         Stay ->
             Html.text ""

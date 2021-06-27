@@ -6,6 +6,8 @@ export class TerminalInput extends LitElement {
   selectionStart: number = 0;
   @property({ type: Number })
   selectionEnd: number = 0;
+  @property({ type: Boolean })
+  disabled: boolean = false
 
   _value: string = '';
   _isFocus: boolean = false;
@@ -92,6 +94,7 @@ export class TerminalInput extends LitElement {
           @input="${this.bindValue}"
           @keydown="${this.caretUpdate}"
           @select="${this.caretUpdate}"
+          .disabled="${this.disabled}"
         />
         <span
           >${this.beforeString}<span
