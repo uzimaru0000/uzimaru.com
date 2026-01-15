@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare Workers
 
 on:
   push:
@@ -22,8 +22,19 @@ jobs:
       - name: Add WASM target
         run: rustup target add wasm32-wasip1
 
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-targets: true
+
+      - name: Cache cargo-component
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/cargo-component
+          key: cargo-component-${{ runner.os }}
+
       - name: Install cargo-component
-        run: cargo install cargo-component
+        run: command -v cargo-component || cargo install cargo-component
 
       - name: Install dependencies
         run: npm ci
@@ -37,9 +48,9 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=uzimaru-com
+          command: deploy
