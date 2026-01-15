@@ -1,13 +1,39 @@
-import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { createShell } from '../shell/dispatcher';
-import type { ExecResult, ShellState } from '../shell/types';
-import { AnsiText } from './AnsiText';
+import type { ShellState } from '../shell/types';
+import { Tty, type TtyHandle } from './tty';
+import { writeStdin, sendStdinEOF, isInteractiveMode } from '../shell/wasm-executor';
 
-interface HistoryEntry {
-  command: string;
-  result: ExecResult;
-  cwd: string;
-  prompt: string;
+/**
+ * 文字が全角かどうか判定
+ */
+function isFullWidth(char: string): boolean {
+  if (!char) return false;
+  const code = char.codePointAt(0);
+  if (code === undefined) return false;
+
+  return (
+    (code >= 0x1100 && code <= 0x115F) ||
+    (code >= 0x2E80 && code <= 0x9FFF) ||
+    (code >= 0xAC00 && code <= 0xD7A3) ||
+    (code >= 0xF900 && code <= 0xFAFF) ||
+    (code >= 0xFE10 && code <= 0xFE1F) ||
+    (code >= 0xFE30 && code <= 0xFE6F) ||
+    (code >= 0xFF00 && code <= 0xFF60) ||
+    (code >= 0xFFE0 && code <= 0xFFE6) ||
+    (code >= 0x20000 && code <= 0x2FFFF)
+  );
+}
+
+/**
+ * 文字列の表示幅を計算（全角=2, 半角=1）
+ */
+function getDisplayWidth(str: string): number {
+  let width = 0;
+  for (const char of str) {
+    width += isFullWidth(char) ? 2 : 1;
+  }
+  return width;
 }
 
 /**
@@ -20,23 +46,23 @@ function expandPS1(ps1: string, state: ShellState): string {
     if (ps1[i] === '\\' && i + 1 < ps1.length) {
       const next = ps1[i + 1];
       switch (next) {
-        case 'w': { // カレントディレクトリ (~ 展開あり)
+        case 'w': {
           const home = state.env.get('HOME') || '/home/uzimaru0000';
           result += state.cwd.startsWith(home)
             ? '~' + state.cwd.slice(home.length)
             : state.cwd;
           break;
         }
-        case 'W': // カレントディレクトリのベース名
+        case 'W':
           result += state.cwd.split('/').pop() || '/';
           break;
-        case 'u': // ユーザー名
+        case 'u':
           result += state.env.get('USER') || 'user';
           break;
-        case 'h': // ホスト名
+        case 'h':
           result += state.env.get('HOSTNAME') || window.location.host;
           break;
-        case '$': // $ or #
+        case '$':
           result += state.env.get('USER') === 'root' ? '#' : '$';
           break;
         case '\\':
@@ -45,10 +71,10 @@ function expandPS1(ps1: string, state: ShellState): string {
         case 'n':
           result += '\n';
           break;
-        case 'e': // ESC
+        case 'e':
           result += '\x1b';
           break;
-        case '[': // 無視 (readline用)
+        case '[':
         case ']':
           break;
         default:
@@ -74,195 +100,271 @@ type Props = {
 }
 
 export function Terminal({ onClose }: Props) {
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [input, setInput] = useState('');
+  const ttyRef = useRef<TtyHandle>(null);
+  const shell = useRef(createShell());
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [inputBuffer, setInputBuffer] = useState('');
+  const [cursorPos, setCursorPos] = useState(0);  // 入力バッファ内のカーソル位置
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [currentPrompt, setCurrentPrompt] = useState('$ ');
-  const inputRef = useRef<HTMLInputElement>(null);
-  const terminalRef = useRef<HTMLDivElement>(null);
-  const shell = useRef(createShell());
+  const inputBufferRef = useRef('');
+  const cursorPosRef = useRef(0);
 
-  const handleSubmit = useCallback(async () => {
-    if (isExecuting) return;
+  // inputBuffer と cursorPos を ref で追跡
+  useEffect(() => {
+    inputBufferRef.current = inputBuffer;
+  }, [inputBuffer]);
 
-    const trimmed = input.trim();
-    const cwd = shell.current.getCwd();
-    const prompt = currentPrompt;
+  useEffect(() => {
+    cursorPosRef.current = cursorPos;
+  }, [cursorPos]);
 
-    setInput('');
+  // プロンプトを表示
+  const showPrompt = useCallback(() => {
+    const prompt = getPrompt(shell.current);
+    ttyRef.current?.write(prompt);
+  }, []);
+
+  // コマンド実行
+  const executeCommand = useCallback(async (cmd: string) => {
+    if (!cmd.trim()) {
+      ttyRef.current?.write('\n');
+      showPrompt();
+      return;
+    }
+
+    setIsExecuting(true);
+    setCommandHistory(prev => [...prev, cmd]);
     setHistoryIndex(-1);
 
-    if (trimmed) {
-      setIsExecuting(true);
+    try {
+      const result = await shell.current.execute(cmd);
 
-      // コマンド実行中の表示を追加
-      setHistory((prev) => [
-        ...prev,
-        { command: trimmed, result: { stdout: '', stderr: '', exitCode: -1 }, cwd, prompt },
-      ]);
-
-      try {
-        const result = await shell.current.execute(trimmed);
-
-        // Handle clear command
-        if (result.stdout === '\x1b[clear]') {
-          setHistory([]);
-          setIsExecuting(false);
-          setCurrentPrompt(getPrompt(shell.current));
-          return;
-        }
-
-        // Handle exit command
-        if (result.stdout === '\x1b[exit]') {
-          onClose();
-          return;
-        }
-
-        // 結果で更新
-        setHistory((prev) => {
-          const newHistory = [...prev];
-          newHistory[newHistory.length - 1] = { command: trimmed, result, cwd, prompt };
-          return newHistory;
-        });
-        setCommandHistory((prev) => [...prev, trimmed]);
-      } catch (error) {
-        setHistory((prev) => {
-          const newHistory = [...prev];
-          newHistory[newHistory.length - 1] = {
-            command: trimmed,
-            result: {
-              stdout: '',
-              stderr: `Error: ${error instanceof Error ? error.message : String(error)}`,
-              exitCode: 1,
-            },
-            cwd,
-            prompt,
-          };
-          return newHistory;
-        });
-      } finally {
+      // clear コマンドの処理
+      if (result.stdout === '\x1b[clear]') {
+        ttyRef.current?.clear();
         setIsExecuting(false);
-        setCurrentPrompt(getPrompt(shell.current));
+        showPrompt();
+        return;
       }
-    } else {
-      setHistory((prev) => [
-        ...prev,
-        { command: '', result: { stdout: '', stderr: '', exitCode: 0 }, cwd, prompt: currentPrompt },
-      ]);
+
+      // exit コマンドの処理
+      if (result.stdout === '\x1b[exit]') {
+        onClose();
+        return;
+      }
+
+      // stdout を表示
+      if (result.stdout) {
+        ttyRef.current?.write(result.stdout);
+        // 最後が改行でなければ追加
+        if (!result.stdout.endsWith('\n')) {
+          ttyRef.current?.write('\n');
+        }
+      }
+
+      // stderr を赤色で表示
+      if (result.stderr) {
+        ttyRef.current?.write('\x1b[31m' + result.stderr + '\x1b[0m');
+        if (!result.stderr.endsWith('\n')) {
+          ttyRef.current?.write('\n');
+        }
+      }
+    } catch (error) {
+      ttyRef.current?.write(
+        '\x1b[31mError: ' +
+        (error instanceof Error ? error.message : String(error)) +
+        '\x1b[0m\n'
+      );
+    } finally {
+      setIsExecuting(false);
+      showPrompt();
     }
-  }, [input, isExecuting, currentPrompt]);
+  }, [onClose, showPrompt]);
 
-  const focusInput = useCallback(() => {
-    inputRef.current?.focus();
-  }, []);
+  // 入力ハンドラ
+  const handleInput = useCallback((data: string) => {
+    // コマンド実行中（インタラクティブモード）
+    if (isExecuting && isInteractiveMode()) {
+      if (data === '\x04') {
+        // Ctrl+D: EOF
+        sendStdinEOF();
+      } else if (data === '\x03') {
+        // Ctrl+C: 中断（現状は EOF と同じ）
+        sendStdinEOF();
+      } else {
+        // stdin にデータを送信
+        writeStdin(data);
+        // エコー（改行のみ表示）
+        if (data === '\n') {
+          ttyRef.current?.write('\n');
+        }
+      }
+      return;
+    }
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleSubmit();
-      } else if (e.ctrlKey && e.key === 'l') {
-        e.preventDefault();
-        setHistory([]);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        if (commandHistory.length > 0) {
-          const newIndex =
-            historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
+    // コマンド実行中（非インタラクティブ）は入力を無視
+    if (isExecuting) {
+      return;
+    }
+
+    // 通常モード：コマンド入力
+    if (data === '\n') {
+      // Enter: コマンド実行
+      ttyRef.current?.write('\n');
+      const cmd = inputBufferRef.current;
+      setInputBuffer('');
+      setCursorPos(0);
+      executeCommand(cmd);
+    } else if (data === '\x7f') {
+      // Backspace
+      const pos = cursorPosRef.current;
+      if (pos > 0) {
+        const buf = inputBufferRef.current;
+        const chars = [...buf];
+        const deletedChar = chars[pos - 1];
+        const deletedWidth = isFullWidth(deletedChar) ? 2 : 1;
+        const newBuf = buf.slice(0, pos - 1) + buf.slice(pos);
+        setInputBuffer(newBuf);
+        setCursorPos(pos - 1);
+        // カーソルを戻して、残りの文字を再描画
+        const remaining = buf.slice(pos);
+        const remainingWidth = getDisplayWidth(remaining);
+        ttyRef.current?.write('\b'.repeat(deletedWidth) + remaining + ' '.repeat(deletedWidth) + '\b'.repeat(remainingWidth + deletedWidth));
+      }
+    } else if (data === '\x1b[A') {
+      // 上矢印: 履歴を遡る
+      if (commandHistory.length > 0) {
+        const newIndex = historyIndex === -1
+          ? commandHistory.length - 1
+          : Math.max(0, historyIndex - 1);
+        setHistoryIndex(newIndex);
+        // 現在の入力をクリアして履歴を表示
+        const buf = inputBufferRef.current;
+        const pos = cursorPosRef.current;
+        const bufWidth = getDisplayWidth(buf);
+        const afterCursorWidth = getDisplayWidth(buf.slice(pos));
+        // カーソルを末尾に移動してからクリア
+        ttyRef.current?.write('\x1b[C'.repeat(afterCursorWidth));
+        ttyRef.current?.write('\b \b'.repeat(bufWidth));
+        const historyCmd = commandHistory[newIndex];
+        setInputBuffer(historyCmd);
+        setCursorPos(historyCmd.length);
+        ttyRef.current?.write(historyCmd);
+      }
+    } else if (data === '\x1b[B') {
+      // 下矢印: 履歴を進める
+      if (historyIndex !== -1) {
+        const buf = inputBufferRef.current;
+        const pos = cursorPosRef.current;
+        const bufWidth = getDisplayWidth(buf);
+        const afterCursorWidth = getDisplayWidth(buf.slice(pos));
+        // カーソルを末尾に移動してからクリア
+        ttyRef.current?.write('\x1b[C'.repeat(afterCursorWidth));
+        ttyRef.current?.write('\b \b'.repeat(bufWidth));
+
+        const newIndex = historyIndex + 1;
+        if (newIndex >= commandHistory.length) {
+          setHistoryIndex(-1);
+          setInputBuffer('');
+          setCursorPos(0);
+        } else {
           setHistoryIndex(newIndex);
-          setInput(commandHistory[newIndex]);
-        }
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        if (historyIndex !== -1) {
-          const newIndex = historyIndex + 1;
-          if (newIndex >= commandHistory.length) {
-            setHistoryIndex(-1);
-            setInput('');
-          } else {
-            setHistoryIndex(newIndex);
-            setInput(commandHistory[newIndex]);
-          }
+          const historyCmd = commandHistory[newIndex];
+          setInputBuffer(historyCmd);
+          setCursorPos(historyCmd.length);
+          ttyRef.current?.write(historyCmd);
         }
       }
-    },
-    [handleSubmit, commandHistory, historyIndex, focusInput]
-  );
-
-  useEffect(() => {
-    inputRef.current?.focus();
-    // 初期化時に .shellrc を実行して結果を表示
-    shell.current.initialize().then((result) => {
-      setCurrentPrompt(getPrompt(shell.current));
-      if (result.stdout || result.stderr) {
-        setHistory([{
-          command: '',
-          result,
-          cwd: shell.current.getCwd(),
-          prompt: getPrompt(shell.current),
-        }]);
+    } else if (data === '\x1b[C') {
+      // 右矢印: カーソルを右に移動
+      const pos = cursorPosRef.current;
+      const buf = inputBufferRef.current;
+      if (pos < buf.length) {
+        const charAtPos = [...buf][pos];
+        const width = isFullWidth(charAtPos) ? 2 : 1;
+        setCursorPos(pos + 1);
+        ttyRef.current?.write('\x1b[C'.repeat(width));
       }
-    });
-  }, []);
-
-  useEffect(() => {
-    if (terminalRef.current) {
-      terminalRef.current.scrollTo({ top: terminalRef.current.scrollHeight });
+    } else if (data === '\x1b[D') {
+      // 左矢印: カーソルを左に移動
+      const pos = cursorPosRef.current;
+      const buf = inputBufferRef.current;
+      if (pos > 0) {
+        const charBeforePos = [...buf][pos - 1];
+        const width = isFullWidth(charBeforePos) ? 2 : 1;
+        setCursorPos(pos - 1);
+        ttyRef.current?.write('\x1b[D'.repeat(width));
+      }
+    } else if (data === '\x0c') {
+      // Ctrl+L: 画面クリア
+      ttyRef.current?.clear();
+      showPrompt();
+      ttyRef.current?.write(inputBufferRef.current);
+      // カーソル位置を復元
+      const afterCursorWidth = getDisplayWidth(inputBufferRef.current.slice(cursorPosRef.current));
+      if (afterCursorWidth > 0) {
+        ttyRef.current?.write('\x1b[D'.repeat(afterCursorWidth));
+      }
+    } else if (data === '\x15') {
+      // Ctrl+U: 行クリア
+      const buf = inputBufferRef.current;
+      const pos = cursorPosRef.current;
+      const bufWidth = getDisplayWidth(buf);
+      const afterCursorWidth = getDisplayWidth(buf.slice(pos));
+      // カーソルを末尾に移動してからクリア
+      ttyRef.current?.write('\x1b[C'.repeat(afterCursorWidth));
+      ttyRef.current?.write('\b \b'.repeat(bufWidth));
+      setInputBuffer('');
+      setCursorPos(0);
+    } else if (data.length >= 1 && data[0] >= ' ') {
+      // 通常の文字（複数文字対応）
+      const buf = inputBufferRef.current;
+      const pos = cursorPosRef.current;
+      const newBuf = buf.slice(0, pos) + data + buf.slice(pos);
+      setInputBuffer(newBuf);
+      setCursorPos(pos + data.length);
+      // 文字を挿入して残りを再描画
+      const remaining = buf.slice(pos);
+      const remainingWidth = getDisplayWidth(remaining);
+      ttyRef.current?.write(data + remaining);
+      // 残りの文字数分だけカーソルを戻す
+      if (remainingWidth > 0) {
+        ttyRef.current?.write('\x1b[D'.repeat(remainingWidth));
+      }
     }
-  }, [history]);
+  }, [isExecuting, executeCommand, commandHistory, historyIndex, showPrompt]);
 
-  // コマンド実行完了後にinputにフォーカスを戻す
+  // 初期化
   useEffect(() => {
-    if (!isExecuting) {
-      inputRef.current?.focus();
-    }
-  }, [isExecuting]);
+    const init = async () => {
+      // .shellrc を実行
+      const result = await shell.current.initialize();
+
+      // 初期化結果を表示
+      if (result.stdout) {
+        ttyRef.current?.write(result.stdout);
+        if (!result.stdout.endsWith('\n')) {
+          ttyRef.current?.write('\n');
+        }
+      }
+      if (result.stderr) {
+        ttyRef.current?.write('\x1b[31m' + result.stderr + '\x1b[0m');
+        if (!result.stderr.endsWith('\n')) {
+          ttyRef.current?.write('\n');
+        }
+      }
+
+      // プロンプト表示
+      showPrompt();
+    };
+
+    // TTY が初期化されてから実行
+    const timer = setTimeout(init, 100);
+    return () => clearTimeout(timer);
+  }, [showPrompt]);
 
   return (
-    <div
-      ref={terminalRef}
-      onClick={focusInput}
-      className="h-full p-4 overflow-y-auto cursor-text bg-term-bg"
-    >
-      {history.map((entry, i) => (
-        <div key={i} className="mb-2">
-          {entry.command !== '' && (
-            <div className="flex gap-1">
-              <AnsiText text={entry.prompt} />
-              <span className="text-term-string">{entry.command}</span>
-            </div>
-          )}
-          {entry.result.exitCode === -1 ? (
-            <div className="text-term-muted">Executing...</div>
-          ) : (
-            <>
-              {entry.result.stdout && (
-                <div><AnsiText text={entry.result.stdout} /></div>
-              )}
-              {entry.result.stderr && (
-                <div><AnsiText text={entry.result.stderr} baseColor="#f44747" /></div>
-              )}
-            </>
-          )}
-        </div>
-      ))}
-
-      <div className="flex items-center">
-        <AnsiText text={currentPrompt} />
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={isExecuting}
-          className={`flex-1 bg-transparent border-none outline-none text-term-string font-inherit ${isExecuting ? 'opacity-50' : ''}`}
-          autoComplete="off"
-          spellCheck={false}
-        />
-      </div>
-    </div>
+    <Tty ref={ttyRef} onInput={handleInput} />
   );
 }

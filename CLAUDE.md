@@ -35,10 +35,12 @@ src/
 ├── main.tsx                # Entry point
 ├── vite-env.d.ts           # Vite type definitions
 ├── components/
-│   ├── Terminal.tsx        # Terminal UI component
-│   ├── AnsiText.tsx        # ANSI escape sequence renderer + Custom OSC handler
-│   ├── ansi-parser.ts      # ANSI/OSC parsing logic (extractJson, parseAnsi, splitCustomOsc)
-│   ├── ansi-parser.test.ts # Tests for ANSI/OSC parsing
+│   ├── Terminal.tsx        # Terminal controller (shell integration, input handling)
+│   ├── tty/                # TTY emulation system
+│   │   ├── index.ts        # Exports
+│   │   ├── Tty.tsx         # TTY display component (screen buffer rendering, IME support)
+│   │   ├── ScreenBuffer.ts # Screen buffer (2D cell array, cursor, ANSI processing)
+│   │   └── ansi-processor.ts # ANSI escape sequence parser
 │   └── renderers/          # Custom rendering system
 │       ├── index.ts        # Exports and built-in renderer registration
 │       ├── registry.tsx    # Renderer registry (singleton)
@@ -170,6 +172,36 @@ The `src/shell/wasm-executor.ts` uses `@bytecodealliance/preview2-shim` to provi
 - **Aliases**: Defined in `.shellrc` or via `alias` command
 - **Shell scripts**: Execute with `sh script.sh`, `./script.sh`, or place in PATH as `.sh` file
 - **Multiline scripts**: Scripts with multiple lines, empty lines, and comments are fully supported
+
+### TTY Emulation System
+
+The terminal uses a custom TTY emulation layer (`src/components/tty/`) that provides:
+
+**ScreenBuffer** (`ScreenBuffer.ts`):
+- 2D cell array representing the terminal screen
+- Each cell contains: `{ char: string, style: CSSProperties, skip?: boolean }`
+- Cursor position tracking
+- ANSI escape sequence processing (colors, cursor movement, erase)
+- Scrollback buffer support
+- Full-width character support (CJK characters occupy 2 cells)
+
+**ANSI Processor** (`ansi-processor.ts`):
+- Parses ANSI escape sequences into typed actions
+- Supports: SGR (colors/styles), cursor movement (CUU/CUD/CUF/CUB/CUP), erase (ED/EL)
+- Custom OSC sequences for rich rendering (`\x1b]custom;{json}\x07`)
+
+**Tty Component** (`Tty.tsx`):
+- Renders ScreenBuffer as React components
+- Hidden input for IME (Japanese/Chinese input) support
+- Cursor position tracking via `data-cursor` attribute
+- ResizeObserver for dynamic terminal sizing
+- Exposes `TtyHandle` interface: `write(text)`, `clear()`, `getSize()`
+
+**Terminal Controller** (`Terminal.tsx`):
+- Integrates Tty with shell execution
+- Manages input buffer and cursor position
+- Handles command history (up/down arrows)
+- PS1 prompt expansion and display
 
 ### Terminal Customization
 
@@ -338,7 +370,6 @@ let _ = std::io::stdout().flush();  // Required!
 The project uses **Vitest** with **@testing-library/react** for testing.
 
 **Test files**:
-- `src/components/ansi-parser.test.ts` - Tests for OSC/ANSI parsing
 - `src/components/renderers/MarkdownRenderer.test.tsx` - Tests for Markdown rendering
 
 **Running tests**:

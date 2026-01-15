@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
+    "type-check": "tsc --noEmit",
     "build:wasm": "cargo component build --release",
     "copy:wasm": "cp target/wasm32-wasip1/release/*.wasm src/content/bin/"
   },

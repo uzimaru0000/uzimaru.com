@@ -624,7 +624,9 @@ async function dispatchExternalCommand(
     };
 
     // WASM を実行
-    const output = await executeWasmCommand(binary, cmd, input);
+    // stdin がない場合はインタラクティブモード（ユーザー入力を待機）
+    const interactive = stdin === undefined;
+    const output = await executeWasmCommand(binary, cmd, input, interactive);
 
     return {
       stdout: output.stdout,
@@ -680,7 +682,8 @@ async function executeSimpleCommand(
   }
 
   // リダイレクト処理
-  let finalStdin = stdin ?? '';
+  // stdin が undefined の場合はインタラクティブモードになるので、そのまま保持
+  let finalStdin: string | undefined = stdin;
   let stdoutFile: string | null = null;
   let stdoutAppend = false;
 
