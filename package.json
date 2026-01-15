@@ -9,7 +9,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "build:wasm": "cargo component build --release",
-    "copy:wasm": "cp target/wasm32-wasip1/release/{echo,ls,cat,markdown,shell}.wasm src/content/bin/"
+    "copy:wasm": "cp target/wasm32-wasip1/release/*.wasm src/content/bin/"
   },
   "dependencies": {
     "@bytecodealliance/preview2-shim": "^0.17.0",
