@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  worker: {
+    format: 'es',
+  },
   test: {
     globals: true,
     environment: 'jsdom',
@@ -21,6 +24,11 @@ export default defineConfig({
     fs: {
       // node_modules 内の WASM ファイルへのアクセスを許可
       allow: ['..'],
+    },
+    headers: {
+      // SharedArrayBuffer を使うために必要
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
     },
   },
 });
