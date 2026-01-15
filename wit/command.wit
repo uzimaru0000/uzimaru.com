@@ -1,0 +1,19 @@
+package uzimaru:command;
+
+interface types {
+    record command-input {
+        args: list<string>,
+        env: list<tuple<string, string>>,
+        cwd: string,
+    }
+    // stdout/stderr は WASI CLI ストリーム経由で処理されるため削除
+}
+
+interface command {
+    use types.{command-input};
+
+    // stdout/stderr は WASI の stdout/stderr に出力され、
+    // TypeScript 側でキャプチャされる。
+    // 戻り値は exit code のみ。
+    run: func(input: command-input) -> s32;
+}

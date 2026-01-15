@@ -1,0 +1,25 @@
+# Shell configuration file
+# This file is loaded when the shell starts
+
+# Environment variables
+export PATH=/bin
+export EDITOR=vim
+export LANG=en_US.UTF-8
+export PS1='\e[36m\w\e[0m ❯ '
+
+# Aliases
+alias ll='ls -l'
+alias la='ls -1a'
+alias cls='clear'
+alias help='markdown /home/uzimaru0000/README.md'
+alias whoami='markdown /home/uzimaru0000/whoami.md'
+alias work='markdown /home/uzimaru0000/work.md'
+alias career='markdown /home/uzimaru0000/career.md'
+alias skill='markdown /home/uzimaru0000/tech-stack.md'
+alias link='markdown /home/uzimaru0000/link.md'
+
+# Welcome message variable
+export GREETING="Welcome to uzimaru0000's terminal!"
+
+# Run help on startup
+help

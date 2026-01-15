@@ -1,0 +1,15 @@
+package uzimaru:mv;
+
+interface types {
+    record command-input {
+        args: list<string>,
+        env: list<tuple<string, string>>,
+        cwd: string,
+    }
+}
+
+world mv {
+    use types.{command-input};
+
+    export run: func(input: command-input) -> s32;
+}

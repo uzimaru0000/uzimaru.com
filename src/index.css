@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  --color-term-bg: #1e1e1e;
+  --color-term-bg-dark: #1a1a1a;
+  --color-term-bg-code: #2d2d2d;
+  --color-term-text: #d4d4d4;
+  --color-term-string: #ce9178;
+  --color-term-error: #f44747;
+  --color-term-keyword: #569cd6;
+  --color-term-type: #4ec9b0;
+  --color-term-comment: #6a9955;
+  --color-term-function: #dcdcaa;
+  --color-term-number: #b5cea8;
+  --color-term-quote: #9cdcfe;
+  --color-term-muted: #808080;
+  --color-term-border: #333333;
+  --color-term-border-light: #444444;
+
+  --font-mono: 'JetBrains Mono', 'Symbols Nerd Font', monospace;
+  --font-sans: 'Noto Sans JP', sans-serif;
+}
+
+/* Nerd Font symbols for Powerline */
+@font-face {
+  font-family: 'Symbols Nerd Font';
+  src: url('https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@v3.3.0/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+#root {
+  height: 100vh;
+}

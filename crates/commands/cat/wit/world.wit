@@ -1,0 +1,18 @@
+package uzimaru:cat;
+
+interface types {
+    record command-input {
+        args: list<string>,
+        env: list<tuple<string, string>>,
+        cwd: string,
+    }
+    // stdout/stderr/stdin は WASI CLI ストリーム経由で処理
+}
+
+world cat {
+    use types.{command-input};
+
+    // exit code のみを返す
+    // stdin からの読み込みは std::io::stdin() を使用
+    export run: func(input: command-input) -> s32;
+}

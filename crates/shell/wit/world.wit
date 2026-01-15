@@ -1,0 +1,95 @@
+package uzimaru:shell;
+
+interface types {
+    /// 環境変数参照
+    record env-ref {
+        name: string,
+        default-value: option<string>,
+    }
+
+    /// ワードセグメント
+    variant word-segment {
+        literal(string),
+        env-var(env-ref),
+        command-subst(u32),
+    }
+
+    /// パース済みワード
+    record parsed-word {
+        segments: list<word-segment>,
+    }
+
+    /// リダイレクト種別
+    enum redirect-kind {
+        stdin,
+        stdout,
+        stdout-append,
+    }
+
+    /// リダイレクト
+    record redirect {
+        kind: redirect-kind,
+        target: parsed-word,
+    }
+
+    /// 単純コマンド
+    record simple-command {
+        args: list<parsed-word>,
+        redirects: list<redirect>,
+    }
+
+    /// パイプライン
+    record pipeline {
+        commands: list<simple-command>,
+    }
+
+    /// 条件接続子
+    enum connector {
+        none,
+        and,
+        or,
+    }
+
+    /// 条件要素
+    record conditional-element {
+        connector: connector,
+        pipeline: pipeline,
+    }
+
+    /// コマンド置換
+    record command-substitution {
+        id: u32,
+        input: string,
+    }
+
+    /// パース結果
+    record parse-result {
+        elements: list<conditional-element>,
+        substitutions: list<command-substitution>,
+    }
+
+    /// パースエラー
+    record parse-error {
+        message: string,
+        position: u32,
+    }
+}
+
+interface parser {
+    use types.{parse-result, parse-error};
+
+    /// コマンド文字列をパース
+    parse: func(input: string) -> result<parse-result, parse-error>;
+}
+
+interface expander {
+    use types.{parsed-word};
+
+    /// パース済みワードを展開
+    expand-word: func(word: parsed-word, env: list<tuple<string, string>>) -> string;
+}
+
+world shell {
+    export parser;
+    export expander;
+}

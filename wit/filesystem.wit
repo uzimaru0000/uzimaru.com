@@ -1,0 +1,33 @@
+package uzimaru:filesystem;
+
+interface types {
+    record file-entry {
+        name: string,
+        is-dir: bool,
+    }
+
+    record file-stat {
+        name: string,
+        is-dir: bool,
+        size: u64,
+    }
+
+    variant fs-error {
+        not-found,
+        permission-denied,
+        is-directory,
+        is-file,
+    }
+}
+
+interface filesystem {
+    use types.{file-entry, file-stat, fs-error};
+
+    list-dir: func(path: string) -> result<list<file-entry>, fs-error>;
+    read-file: func(path: string) -> result<list<u8>, fs-error>;
+    write-file: func(path: string, data: list<u8>) -> result<_, fs-error>;
+    mkdir: func(path: string) -> result<_, fs-error>;
+    remove: func(path: string) -> result<_, fs-error>;
+    stat: func(path: string) -> result<file-stat, fs-error>;
+    exists: func(path: string) -> bool;
+}

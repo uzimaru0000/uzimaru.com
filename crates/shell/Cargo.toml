@@ -1,0 +1,15 @@
+[package]
+name = "shell"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.36"
+nom = "7"
+thiserror = "1"
+
+[package.metadata.component]
+package = "uzimaru:shell"

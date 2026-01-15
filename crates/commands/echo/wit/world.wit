@@ -1,0 +1,18 @@
+package uzimaru:echo;
+
+interface types {
+    record command-input {
+        args: list<string>,
+        env: list<tuple<string, string>>,
+        cwd: string,
+    }
+    // stdout/stderr は WASI CLI ストリーム経由で処理（Rust の println! が使う）
+}
+
+world echo {
+    use types.{command-input};
+
+    // exit code のみを返す
+    // stdout/stderr は cargo-component が自動的に WASI imports を追加
+    export run: func(input: command-input) -> s32;
+}

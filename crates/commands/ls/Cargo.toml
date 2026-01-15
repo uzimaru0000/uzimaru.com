@@ -1,0 +1,13 @@
+[package]
+name = "ls"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.36"
+
+[package.metadata.component]
+package = "uzimaru:ls"
