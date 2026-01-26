@@ -13,6 +13,7 @@ export interface CommandOutput {
   stdout: string;
   stderr: string;
   exitCode: number;
+  fileSystemData?: object;  // WASM実行後のファイルシステム状態
 }
 
 export interface ShellState {

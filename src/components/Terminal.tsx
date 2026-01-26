@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { createShell } from '../shell/dispatcher';
 import type { ShellState } from '../shell/types';
 import { Tty, type TtyHandle } from './tty';
-import { writeStdin, sendStdinEOF, isInteractiveMode } from '../shell/wasm-executor';
+import { writeStdin, sendStdinEOF, isInteractiveMode, setStdoutCallback } from '../shell/wasm-executor';
 
 /**
  * 文字が全角かどうか判定
@@ -119,6 +119,13 @@ export function Terminal({ onClose }: Props) {
     cursorPosRef.current = cursorPos;
   }, [cursorPos]);
 
+  // TTYサイズが変更されたら環境変数を更新
+  const handleResize = useCallback((rows: number, cols: number) => {
+    const state = shell.current.getState();
+    state.env.set('LINES', String(rows));
+    state.env.set('COLUMNS', String(cols));
+  }, []);
+
   // プロンプトを表示
   const showPrompt = useCallback(() => {
     const prompt = getPrompt(shell.current);
@@ -137,6 +144,14 @@ export function Terminal({ onClose }: Props) {
     setCommandHistory(prev => [...prev, cmd]);
     setHistoryIndex(-1);
 
+    // インタラクティブモード用のstdoutコールバックを設定
+    // これによりWASMコマンドのstdout出力がリアルタイムでTTYに表示される
+    let stdoutStreamed = false;
+    setStdoutCallback((data: string) => {
+      stdoutStreamed = true;
+      ttyRef.current?.write(data);
+    });
+
     try {
       const result = await shell.current.execute(cmd);
 
@@ -154,8 +169,8 @@ export function Terminal({ onClose }: Props) {
         return;
       }
 
-      // stdout を表示
-      if (result.stdout) {
+      // stdout を表示（リアルタイムストリーミングされていない場合のみ）
+      if (result.stdout && !stdoutStreamed) {
         ttyRef.current?.write(result.stdout);
         // 最後が改行でなければ追加
         if (!result.stdout.endsWith('\n')) {
@@ -177,6 +192,7 @@ export function Terminal({ onClose }: Props) {
         '\x1b[0m\n'
       );
     } finally {
+      setStdoutCallback(null);
       setIsExecuting(false);
       showPrompt();
     }
@@ -365,6 +381,6 @@ export function Terminal({ onClose }: Props) {
   }, [showPrompt]);
 
   return (
-    <Tty ref={ttyRef} onInput={handleInput} />
+    <Tty ref={ttyRef} onInput={handleInput} onResize={handleResize} />
   );
 }

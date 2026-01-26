@@ -171,6 +171,11 @@ export class ScreenBuffer {
           payload: action.payload,
         });
         break;
+
+      case 'cursor_show':
+      case 'cursor_hide':
+        // カーソル表示/非表示は現在未実装（無視）
+        break;
     }
   }
 

@@ -8,11 +8,13 @@
 import type { CommandInput, CommandOutput } from './types';
 import { WASIShim } from '@bytecodealliance/preview2-shim/instantiation';
 import { WorkerStdinBuffer } from './stdin-buffer';
+import { WorkerStdoutBuffer } from './stdout-buffer';
 import { customPoll, customMonotonicClock } from './wasi-pollable';
 
 // ブラウザ専用の内部APIの型定義
 interface BrowserFilesystemApi {
   _setFileData: (data: object) => void;
+  _getFileData: () => object;
   _setCwd: (cwd: string) => void;
 }
 
@@ -39,6 +41,7 @@ interface WorkerRequest {
   input: CommandInput;
   fileSystemData: object;
   stdinBuffer?: SharedArrayBuffer;  // インタラクティブ stdin 用
+  stdoutBuffer?: SharedArrayBuffer; // インタラクティブ stdout 用
 }
 
 interface WorkerResponse {
@@ -86,7 +89,8 @@ async function executeWasmCommandImpl(
   commandName: string,
   input: CommandInput,
   fileSystemData: object,
-  stdinBuffer?: SharedArrayBuffer
+  stdinBuffer?: SharedArrayBuffer,
+  stdoutBuffer?: SharedArrayBuffer
 ): Promise<CommandOutput> {
   const stdoutCapture = new OutputCapture();
   const stderrCapture = new OutputCapture();
@@ -132,12 +136,14 @@ async function executeWasmCommandImpl(
         throw new Error('No instantiate function found in generated module');
       }
 
-      const wasiImports = await getWasiImports(
+      const { wasiImports, getUpdatedFileSystem } = await getWasiImports(
         fileSystemData,
         stdoutCapture,
         stderrCapture,
+        input.cwd,
         input.stdin,
-        stdinBuffer
+        stdinBuffer,
+        stdoutBuffer
       );
       const instance = await module.instantiate(getCoreModule, wasiImports);
 
@@ -152,6 +158,7 @@ async function executeWasmCommandImpl(
         stdout: stdoutCapture.getOutput(),
         stderr: stderrCapture.getOutput(),
         exitCode,
+        fileSystemData: getUpdatedFileSystem(),
       };
     } finally {
       URL.revokeObjectURL(jsUrl);
@@ -175,9 +182,11 @@ async function getWasiImports(
   fileSystemData: object,
   stdoutCapture: OutputCapture,
   stderrCapture: OutputCapture,
+  cwd: string,
   stdinData?: string,
-  stdinBuffer?: SharedArrayBuffer
-): Promise<Record<string, unknown>> {
+  stdinBuffer?: SharedArrayBuffer,
+  stdoutBuffer?: SharedArrayBuffer
+): Promise<{ wasiImports: Record<string, unknown>; getUpdatedFileSystem: () => object }> {
   const filesystemModule = (await import(
     '@bytecodealliance/preview2-shim/filesystem'
   )) as BrowserFilesystemApi;
@@ -187,8 +196,27 @@ async function getWasiImports(
   )) as unknown as BrowserCliApi;
 
   filesystemModule._setFileData(fileSystemData);
+  filesystemModule._setCwd(cwd);
 
-  cliModule._setStdout(stdoutCapture.handler);
+  // stdout の設定
+  if (stdoutBuffer) {
+    // インタラクティブモード: SharedArrayBuffer を使ってリアルタイムストリーミング
+    const workerStdout = new WorkerStdoutBuffer(stdoutBuffer);
+    cliModule._setStdout({
+      write: (buf: Uint8Array) => {
+        // リアルタイムでメインスレッドに送信
+        workerStdout.write(buf);
+        // キャプチャも行う（最終結果用）
+        stdoutCapture.handler.write(buf);
+      },
+      blockingFlush: () => {
+        stdoutCapture.handler.blockingFlush();
+      },
+    });
+  } else {
+    cliModule._setStdout(stdoutCapture.handler);
+  }
+
   cliModule._setStderr(stderrCapture.handler);
 
   if (stdinBuffer) {
@@ -226,12 +254,21 @@ async function getWasiImports(
   imports['wasi:io/poll'] = customPoll;
   imports['wasi:clocks/monotonic-clock'] = customMonotonicClock;
 
-  return imports;
+  return {
+    wasiImports: imports,
+    getUpdatedFileSystem: () => filesystemModule._getFileData(),
+  };
 }
 
 // Worker メッセージハンドラ
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
-  const { id, wasmBinary, commandName, input, fileSystemData, stdinBuffer } = event.data;
+  const { id, wasmBinary, commandName, input, fileSystemData, stdinBuffer, stdoutBuffer } = event.data;
+
+  // stdout バッファの完了通知用
+  let workerStdout: WorkerStdoutBuffer | null = null;
+  if (stdoutBuffer) {
+    workerStdout = new WorkerStdoutBuffer(stdoutBuffer);
+  }
 
   try {
     const result = await executeWasmCommandImpl(
@@ -239,11 +276,23 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       commandName,
       input,
       fileSystemData,
-      stdinBuffer
+      stdinBuffer,
+      stdoutBuffer
     );
+
+    // stdout バッファの完了を通知
+    if (workerStdout) {
+      workerStdout.complete();
+    }
+
     const response: WorkerResponse = { id, result };
     self.postMessage(response);
   } catch (error) {
+    // stdout バッファの完了を通知（エラー時も）
+    if (workerStdout) {
+      workerStdout.complete();
+    }
+
     const response: WorkerResponse = {
       id,
       error: error instanceof Error ? error.message : String(error),

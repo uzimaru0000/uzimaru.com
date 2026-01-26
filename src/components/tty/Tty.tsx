@@ -170,17 +170,14 @@ export const Tty = forwardRef<TtyHandle, TtyProps>(function Tty({ onInput, onRes
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
       onInput('\x1b[D');
-    } else if (e.ctrlKey) {
-      // Ctrl キーの組み合わせ
+    } else if (e.ctrlKey && e.key.length === 1) {
+      // Ctrl キーの組み合わせ（単独のCtrlキーは除外）
       e.preventDefault();
-      if (e.key === 'c') {
-        onInput('\x03');  // ETX (Ctrl+C)
-      } else if (e.key === 'd') {
-        onInput('\x04');  // EOT (Ctrl+D)
-      } else if (e.key === 'l') {
-        onInput('\x0c');  // FF (Ctrl+L)
-      } else if (e.key === 'u') {
-        onInput('\x15');  // NAK (Ctrl+U)
+      const key = e.key.toLowerCase();
+      if (key >= 'a' && key <= 'z') {
+        // Ctrl+A = 0x01, Ctrl+B = 0x02, ..., Ctrl+Z = 0x1A
+        const code = key.charCodeAt(0) - 'a'.charCodeAt(0) + 1;
+        onInput(String.fromCharCode(code));
       }
     }
     // 通常の文字は handleInput で処理するため、ここでは処理しない

@@ -15,6 +15,8 @@ export type AnsiAction =
   | { type: 'cr' }  // Carriage Return
   | { type: 'lf' }  // Line Feed
   | { type: 'bs' }  // Backspace
+  | { type: 'cursor_show' }  // DECTCEM - Show Cursor
+  | { type: 'cursor_hide' }  // DECTCEM - Hide Cursor
   | { type: 'custom'; payload: unknown };  // カスタム OSC
 
 const ESC = '\x1b';
@@ -105,6 +107,14 @@ export function parseAnsiStream(text: string): AnsiAction[] {
  */
 function parseCSI(text: string, start: number): { action: AnsiAction; endIndex: number } | null {
   let i = start;
+  let privateMode = false;
+
+  // DEC Private Mode prefix (?)
+  if (text[i] === '?') {
+    privateMode = true;
+    i++;
+  }
+
   let params = '';
 
   // パラメータを収集（数字とセミコロン）
@@ -120,6 +130,20 @@ function parseCSI(text: string, start: number): { action: AnsiAction; endIndex: 
 
   // パラメータを数値配列に変換
   const numbers = params ? params.split(';').map(n => parseInt(n, 10) || 0) : [];
+
+  // DEC Private Mode sequences
+  if (privateMode) {
+    // DECTCEM - Text Cursor Enable Mode
+    if (numbers[0] === 25) {
+      if (command === 'h') {
+        return { action: { type: 'cursor_show' }, endIndex: i };
+      } else if (command === 'l') {
+        return { action: { type: 'cursor_hide' }, endIndex: i };
+      }
+    }
+    // Other private modes are ignored
+    return null;
+  }
 
   switch (command) {
     case 'm': // SGR - Select Graphic Rendition
