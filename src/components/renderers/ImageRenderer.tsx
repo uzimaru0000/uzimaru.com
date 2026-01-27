@@ -14,7 +14,7 @@ export function ImageRenderer({ props }: RendererProps<ImageProps>) {
 
   if (error) {
     return (
-      <span className="text-term-error">
+      <span className="text-ansi-1">
         [Image not found: {src}]
       </span>
     );

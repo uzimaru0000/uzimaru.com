@@ -1,6 +1,9 @@
 import type { FileEntry, FileStat, FsError, Result, FileSystemNode, FileSystem } from './types';
 import { getContentFiles, getDirectoryPaths } from './content-loader';
 
+export type FsEvent = { type: 'write' | 'remove'; path: string };
+export type FsListener = (event: FsEvent) => void;
+
 function ok<T>(val: T): Result<T, FsError> {
   return { tag: 'ok', val };
 }
@@ -32,10 +35,22 @@ function createFile(name: string, content: Uint8Array = new Uint8Array()): FileS
 
 export class VirtualFileSystem implements FileSystem {
   private root: FileSystemNode;
+  private listeners: Set<FsListener> = new Set();
 
   constructor() {
     this.root = createDirectory('/');
     this.initDefaultStructure();
+  }
+
+  subscribe(listener: FsListener): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private emit(event: FsEvent): void {
+    for (const listener of this.listeners) {
+      listener(event);
+    }
   }
 
   private initDefaultStructure(): void {
@@ -164,6 +179,7 @@ export class VirtualFileSystem implements FileSystem {
       parent.children = new Map();
     }
     parent.children.set(fileName, createFile(fileName, data));
+    this.emit({ type: 'write', path: '/' + parts.join('/') });
     return ok(undefined);
   }
 
@@ -212,6 +228,7 @@ export class VirtualFileSystem implements FileSystem {
     }
 
     parent.children.delete(name);
+    this.emit({ type: 'remove', path: '/' + parts.join('/') });
     return ok(undefined);
   }
 

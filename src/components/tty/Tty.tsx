@@ -207,7 +207,7 @@ export const Tty = forwardRef<TtyHandle, TtyProps>(function Tty({ onInput, onRes
     return (
       <div
         ref={containerRef}
-        className="h-full w-full bg-term-bg font-mono text-term-fg p-2 overflow-hidden"
+        className="h-full w-full bg-ansi-0 font-mono text-ansi-7 p-2 overflow-hidden"
         tabIndex={0}
       />
     );
@@ -223,7 +223,7 @@ export const Tty = forwardRef<TtyHandle, TtyProps>(function Tty({ onInput, onRes
   return (
     <div
       ref={containerRef}
-      className="h-full w-full bg-term-bg font-mono text-term-fg p-2 overflow-auto outline-none cursor-text relative"
+      className="h-full w-full bg-ansi-0 font-mono text-ansi-7 p-2 overflow-auto outline-none cursor-text relative"
       onClick={handleClick}
     >
       {/* 隠し input（IME 入力用） - カーソル位置に配置 */}

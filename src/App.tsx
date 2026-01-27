@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Terminal } from "./components/Terminal";
+import { initThemeWatcher } from "./theme";
 import clsx from "clsx";
 
 export function App() {
@@ -10,6 +11,11 @@ export function App() {
   }>({ x: document.body.clientWidth / 2, y: document.body.clientHeight });
 
   const [isOpen, setIsOpen] = useState(false);
+
+  // テーマ監視を初期化
+  useEffect(() => {
+    initThemeWatcher();
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -43,16 +49,16 @@ export function App() {
 
   return (
     <div
-      className="h-screen font-mono flex justify-center items-center bg-term-quote"
+      className="h-screen font-mono flex justify-center items-center bg-ansi-14"
       onMouseMove={(e) => setMousePosition({ x: e.clientX, y: e.clientY })}
     >
       <div
         className={clsx(
           "transition-all",
           "duration-75",
-          "bg-term-border",
+          "bg-ansi-8",
           "text-base",
-          "border-term-border",
+          "border-ansi-8",
           "border-8",
           {
             "w-full h-full sm:w-11/12 sm:h-11/12 sm:rounded-md": isOpen,
@@ -66,7 +72,7 @@ export function App() {
         ) : (
           <canvas
             ref={canvasRef}
-            className="w-full h-full rounded-md bg-term-bg"
+            className="w-full h-full rounded-md bg-ansi-0"
             width={96}
             height={80}
           />

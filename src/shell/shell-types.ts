@@ -55,9 +55,36 @@ export interface CommandSubstitution {
   input: string;
 }
 
+/** elif ブランチ */
+export interface ElifBranch {
+  condition: ConditionalElement[];
+  body: string;
+}
+
+/** if 文 */
+export interface IfStatement {
+  condition: ConditionalElement[];
+  thenBody: string;
+  elifBranches: ElifBranch[];
+  elseBody: string | null;
+}
+
+/** for 文 */
+export interface ForStatement {
+  variable: string;
+  values: ParsedWord[];
+  body: string;
+}
+
+/** 文（ステートメント） */
+export type Statement =
+  | { tag: 'command'; val: ConditionalElement[] }
+  | { tag: 'if-stmt'; val: IfStatement }
+  | { tag: 'for-stmt'; val: ForStatement };
+
 /** パース結果 */
 export interface ParseResult {
-  elements: ConditionalElement[];
+  statements: Statement[];
   substitutions: CommandSubstitution[];
 }
 

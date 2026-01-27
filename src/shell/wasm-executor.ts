@@ -110,8 +110,10 @@ function convertToPreview2Format(fs: ReturnType<typeof getFileSystem>): object {
       if (entry.isDir) {
         dir[entry.name] = convertDir(childPath);
       } else {
-        // バイナリファイル（.wasm）はスキップ（テキストファイルのみ同期）
+        // バイナリファイル（.wasm）は内容を空にしてメタデータのみ同期
+        // （大きなバイナリを Worker に転送しないため）
         if (entry.name.endsWith('.wasm')) {
+          dir[entry.name] = { source: '' };
           continue;
         }
         const fileResult = fs.readFile(childPath);
@@ -210,10 +212,10 @@ export async function executeWasmCommand(
         }
       }
 
-      // バッファをクリア
+      // バッファをクリア（stdoutCallback は維持）
+      // stdoutCallback は Terminal.tsx の finally で setStdoutCallback(null) によってクリアされる
       currentStdinBuffer = null;
       currentStdoutBuffer = null;
-      currentStdoutCallback = null;
     };
 
     const handler = (event: MessageEvent<WorkerResponse>) => {
@@ -296,6 +298,13 @@ export function isInteractiveMode(): boolean {
  */
 export function setStdoutCallback(callback: ((data: string) => void) | null): void {
   currentStdoutCallback = callback;
+}
+
+/**
+ * 現在の stdout コールバックを取得
+ */
+export function getStdoutCallback(): ((data: string) => void) | null {
+  return currentStdoutCallback;
 }
 
 /**

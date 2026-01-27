@@ -62,9 +62,37 @@ interface types {
         input: string,
     }
 
+    /// elif ブランチ
+    record elif-branch {
+        condition: list<conditional-element>,
+        body: string,
+    }
+
+    /// if 文
+    record if-statement {
+        condition: list<conditional-element>,
+        then-body: string,
+        elif-branches: list<elif-branch>,
+        else-body: option<string>,
+    }
+
+    /// for 文
+    record for-statement {
+        variable: string,
+        values: list<parsed-word>,
+        body: string,
+    }
+
+    /// 文（ステートメント）
+    variant statement {
+        command(list<conditional-element>),
+        if-stmt(if-statement),
+        for-stmt(for-statement),
+    }
+
     /// パース結果
     record parse-result {
-        elements: list<conditional-element>,
+        statements: list<statement>,
         substitutions: list<command-substitution>,
     }
 

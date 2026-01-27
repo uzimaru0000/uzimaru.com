@@ -1,0 +1,18 @@
+:root {
+  --color-ansi-0: #000000;   /* black */
+  --color-ansi-1: #cd3131;   /* red */
+  --color-ansi-2: #0dbc79;   /* green */
+  --color-ansi-3: #e5e510;   /* yellow */
+  --color-ansi-4: #2472c8;   /* blue */
+  --color-ansi-5: #bc3fbc;   /* magenta */
+  --color-ansi-6: #11a8cd;   /* cyan */
+  --color-ansi-7: #e5e5e5;   /* white */
+  --color-ansi-8: #666666;   /* bright black */
+  --color-ansi-9: #f14c4c;   /* bright red */
+  --color-ansi-10: #23d18b;  /* bright green */
+  --color-ansi-11: #f5f543;  /* bright yellow */
+  --color-ansi-12: #3b8eea;  /* bright blue */
+  --color-ansi-13: #d670d6;  /* bright magenta */
+  --color-ansi-14: #29b8db;  /* bright cyan */
+  --color-ansi-15: #ffffff;  /* bright white */
+}

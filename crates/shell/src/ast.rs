@@ -135,27 +135,62 @@ pub struct CommandSubstitution {
     pub input: String,
 }
 
+/// elif ブランチ
+#[derive(Debug, Clone, PartialEq)]
+pub struct ElifBranch {
+    pub condition: Vec<ConditionalElement>,
+    pub body: String,
+}
+
+/// if 文
+#[derive(Debug, Clone, PartialEq)]
+pub struct IfStatement {
+    pub condition: Vec<ConditionalElement>,
+    pub then_body: String,
+    pub elif_branches: Vec<ElifBranch>,
+    pub else_body: Option<String>,
+}
+
+/// for 文
+#[derive(Debug, Clone, PartialEq)]
+pub struct ForStatement {
+    pub variable: String,
+    pub values: Vec<ParsedWord>,
+    pub body: String,
+}
+
+/// 文（ステートメント）
+#[derive(Debug, Clone, PartialEq)]
+pub enum Statement {
+    /// 単純なコマンド実行
+    Command(Vec<ConditionalElement>),
+    /// if 文
+    If(IfStatement),
+    /// for 文
+    For(ForStatement),
+}
+
 /// パース結果
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParseResult {
-    pub elements: Vec<ConditionalElement>,
+    pub statements: Vec<Statement>,
     pub substitutions: Vec<CommandSubstitution>,
 }
 
 impl ParseResult {
     pub fn new() -> Self {
         Self {
-            elements: Vec::new(),
+            statements: Vec::new(),
             substitutions: Vec::new(),
         }
     }
 
     pub fn single(cmd: SimpleCommand) -> Self {
         Self {
-            elements: vec![ConditionalElement {
+            statements: vec![Statement::Command(vec![ConditionalElement {
                 connector: Connector::None,
                 pipeline: Pipeline::single(cmd),
-            }],
+            }])],
             substitutions: Vec::new(),
         }
     }

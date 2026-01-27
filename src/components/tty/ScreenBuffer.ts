@@ -218,25 +218,23 @@ export class ScreenBuffer {
   }
 
   /**
-   * 基本 ANSI カラー (0-15) を Hex に変換
+   * 基本 ANSI カラー (0-15) を CSS 変数に変換
    */
   private ansiColorToHex(n: number): string {
-    // VSCode 風のカラーパレット
-    const colors = [
-      '#000000', '#f44747', '#6a9955', '#dcdcaa',
-      '#569cd6', '#c586c0', '#4ec9b0', '#d4d4d4',
-      '#808080', '#f44747', '#6a9955', '#dcdcaa',
-      '#569cd6', '#c586c0', '#4ec9b0', '#ffffff',
-    ];
-    return colors[n] || '#ffffff';
+    // CSS変数を返す（0-15のみ）
+    if (n >= 0 && n <= 15) {
+      return `var(--color-ansi-${n})`;
+    }
+    return '#ffffff';
   }
 
   /**
-   * 256-color を Hex に変換
+   * 256-color を CSS 変数または Hex に変換
    */
   private ansi256ToHex(n: number): string {
     if (n < 16) {
-      return this.ansiColorToHex(n);
+      // 0-15 は CSS 変数を使用
+      return `var(--color-ansi-${n})`;
     } else if (n < 232) {
       const i = n - 16;
       const r = Math.floor(i / 36);

@@ -36,6 +36,26 @@ pub enum Token {
     ParenClose,
     /// 改行
     Newline,
+    /// セミコロン ;
+    Semicolon,
+    /// キーワード if
+    If,
+    /// キーワード then
+    Then,
+    /// キーワード elif
+    Elif,
+    /// キーワード else
+    Else,
+    /// キーワード fi
+    Fi,
+    /// キーワード for
+    For,
+    /// キーワード in
+    In,
+    /// キーワード do
+    Do,
+    /// キーワード done
+    Done,
 }
 
 /// シェルのメタ文字かどうか
@@ -46,6 +66,22 @@ fn is_meta(c: char) -> bool {
         c,
         '|' | '&' | '<' | '>' | '(' | ')' | ';' | '\n' | ' ' | '\t' | '"' | '\''
     )
+}
+
+/// キーワードをトークンに変換
+fn keyword_to_token(word: &str) -> Option<Token> {
+    match word {
+        "if" => Some(Token::If),
+        "then" => Some(Token::Then),
+        "elif" => Some(Token::Elif),
+        "else" => Some(Token::Else),
+        "fi" => Some(Token::Fi),
+        "for" => Some(Token::For),
+        "in" => Some(Token::In),
+        "do" => Some(Token::Do),
+        "done" => Some(Token::Done),
+        _ => None,
+    }
 }
 
 /// 空白をスキップ
@@ -125,11 +161,13 @@ fn operator(input: &str) -> IResult<&str, Token> {
         value(Token::RedirectOut, char('>')),
         value(Token::RedirectIn, char('<')),
         value(Token::ParenClose, char(')')),
+        value(Token::Semicolon, char(';')),
     ))(input)
 }
 
 /// 環境変数を含む可能性のあるワードをパース
 /// $VAR, ${VAR}, ${VAR:-default} を検出
+/// キーワード（if, then, else, fi, for, in, while, do, done）も検出
 fn word_with_vars(input: &str) -> IResult<&str, Token> {
     let mut result = String::new();
     let mut remaining = input;
@@ -162,6 +200,11 @@ fn word_with_vars(input: &str) -> IResult<&str, Token> {
             input,
             nom::error::ErrorKind::TakeWhile1,
         )));
+    }
+
+    // キーワードかどうかチェック
+    if let Some(keyword_token) = keyword_to_token(&result) {
+        return Ok((remaining, keyword_token));
     }
 
     Ok((remaining, Token::Word(result)))

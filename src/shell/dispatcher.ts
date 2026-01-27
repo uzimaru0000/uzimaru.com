@@ -4,10 +4,10 @@
  */
 
 import { getFileSystem } from '../filesystem';
-import { executeWasmCommand } from './wasm-executor';
+import { executeWasmCommand, getStdoutCallback, setStdoutCallback } from './wasm-executor';
 import { parseShellCommand, expandWord } from './shell-parser';
 import type { CommandInput, ShellState, ExecResult } from './types';
-import type { ParseResult, SimpleCommand, Pipeline } from './shell-types';
+import type { ParseResult, SimpleCommand, Pipeline, Statement, IfStatement, ForStatement, ConditionalElement } from './shell-types';
 
 /**
  * ビルトインコマンドの定義
@@ -345,7 +345,227 @@ const builtinCommands: Record<
     const content = new TextDecoder().decode(readResult.val);
     return await executeScript(content, state, scriptPath);
   },
+
+  test: (state, args) => {
+    return executeTestCommand(state, args.slice(1));
+  },
+
+  '[': (state, args) => {
+    // 最後の ] を除去
+    const testArgs = args.slice(1);
+    if (testArgs.length > 0 && testArgs[testArgs.length - 1] === ']') {
+      testArgs.pop();
+    }
+    return executeTestCommand(state, testArgs);
+  },
+
+  true: () => {
+    return { stdout: '', stderr: '', exitCode: 0 };
+  },
+
+  false: () => {
+    return { stdout: '', stderr: '', exitCode: 1 };
+  },
+
+  expr: (_state, args) => {
+    // 簡易 expr コマンド実装
+    const operands = args.slice(1);
+
+    if (operands.length === 0) {
+      return { stdout: '', stderr: 'expr: missing operand', exitCode: 2 };
+    }
+
+    if (operands.length === 1) {
+      return { stdout: operands[0], stderr: '', exitCode: operands[0] === '0' ? 1 : 0 };
+    }
+
+    if (operands.length === 3) {
+      const left = parseInt(operands[0], 10);
+      const op = operands[1];
+      const right = parseInt(operands[2], 10);
+
+      if (isNaN(left) || isNaN(right)) {
+        return { stdout: '', stderr: 'expr: non-integer argument', exitCode: 2 };
+      }
+
+      let result: number;
+      switch (op) {
+        case '+':
+          result = left + right;
+          break;
+        case '-':
+          result = left - right;
+          break;
+        case '*':
+          result = left * right;
+          break;
+        case '/':
+          if (right === 0) {
+            return { stdout: '', stderr: 'expr: division by zero', exitCode: 2 };
+          }
+          result = Math.floor(left / right);
+          break;
+        case '%':
+          if (right === 0) {
+            return { stdout: '', stderr: 'expr: division by zero', exitCode: 2 };
+          }
+          result = left % right;
+          break;
+        case '<':
+          return { stdout: left < right ? '1' : '0', stderr: '', exitCode: left < right ? 0 : 1 };
+        case '<=':
+          return { stdout: left <= right ? '1' : '0', stderr: '', exitCode: left <= right ? 0 : 1 };
+        case '=':
+        case '==':
+          return { stdout: left === right ? '1' : '0', stderr: '', exitCode: left === right ? 0 : 1 };
+        case '!=':
+          return { stdout: left !== right ? '1' : '0', stderr: '', exitCode: left !== right ? 0 : 1 };
+        case '>=':
+          return { stdout: left >= right ? '1' : '0', stderr: '', exitCode: left >= right ? 0 : 1 };
+        case '>':
+          return { stdout: left > right ? '1' : '0', stderr: '', exitCode: left > right ? 0 : 1 };
+        default:
+          return { stdout: '', stderr: `expr: unknown operator: ${op}`, exitCode: 2 };
+      }
+
+      return { stdout: result.toString(), stderr: '', exitCode: result === 0 ? 1 : 0 };
+    }
+
+    return { stdout: '', stderr: 'expr: syntax error', exitCode: 2 };
+  },
+
+  printf: (_state, args) => {
+    if (args.length < 2) {
+      return { stdout: '', stderr: '', exitCode: 0 };
+    }
+
+    // フォーマット文字列を処理
+    let format = args[1];
+    const values = args.slice(2);
+
+    // エスケープシーケンスを処理
+    format = format
+      .replace(/\\n/g, '\n')
+      .replace(/\\t/g, '\t')
+      .replace(/\\r/g, '\r')
+      .replace(/\\\\/g, '\\');
+
+    // %s を順番に置換
+    let valueIndex = 0;
+    const output = format.replace(/%s/g, () => {
+      if (valueIndex < values.length) {
+        return values[valueIndex++];
+      }
+      return '';
+    });
+
+    return { stdout: output, stderr: '', exitCode: 0 };
+  },
 };
+
+/**
+ * test コマンドを実行
+ */
+function executeTestCommand(state: ShellState, args: string[]): ExecResult {
+  const fs = getFileSystem();
+
+  if (args.length === 0) {
+    return { stdout: '', stderr: '', exitCode: 1 };
+  }
+
+  // 単項演算子
+  if (args.length === 1) {
+    // 単一引数は空でなければ真
+    return { stdout: '', stderr: '', exitCode: args[0] !== '' ? 0 : 1 };
+  }
+
+  // 否定演算子
+  if (args[0] === '!') {
+    const result = executeTestCommand(state, args.slice(1));
+    return { stdout: '', stderr: '', exitCode: result.exitCode === 0 ? 1 : 0 };
+  }
+
+  // 単項演算子（2引数）
+  if (args.length === 2) {
+    const op = args[0];
+    const operand = args[1];
+    const fullPath = resolvePath(state.cwd, operand);
+
+    switch (op) {
+      // ファイルテスト
+      case '-e':
+        return { stdout: '', stderr: '', exitCode: fs.exists(fullPath) ? 0 : 1 };
+      case '-f': {
+        if (!fs.exists(fullPath)) return { stdout: '', stderr: '', exitCode: 1 };
+        const stat = fs.stat(fullPath);
+        return { stdout: '', stderr: '', exitCode: stat.tag === 'ok' && !stat.val.isDir ? 0 : 1 };
+      }
+      case '-d': {
+        if (!fs.exists(fullPath)) return { stdout: '', stderr: '', exitCode: 1 };
+        const stat = fs.stat(fullPath);
+        return { stdout: '', stderr: '', exitCode: stat.tag === 'ok' && stat.val.isDir ? 0 : 1 };
+      }
+      // 文字列テスト
+      case '-z':
+        return { stdout: '', stderr: '', exitCode: operand === '' ? 0 : 1 };
+      case '-n':
+        return { stdout: '', stderr: '', exitCode: operand !== '' ? 0 : 1 };
+      default:
+        return { stdout: '', stderr: `test: unknown operator: ${op}`, exitCode: 2 };
+    }
+  }
+
+  // 二項演算子（3引数）
+  if (args.length === 3) {
+    const left = args[0];
+    const op = args[1];
+    const right = args[2];
+
+    switch (op) {
+      // 文字列比較
+      case '=':
+      case '==':
+        return { stdout: '', stderr: '', exitCode: left === right ? 0 : 1 };
+      case '!=':
+        return { stdout: '', stderr: '', exitCode: left !== right ? 0 : 1 };
+      // 数値比較
+      case '-eq': {
+        const l = parseInt(left, 10);
+        const r = parseInt(right, 10);
+        return { stdout: '', stderr: '', exitCode: l === r ? 0 : 1 };
+      }
+      case '-ne': {
+        const l = parseInt(left, 10);
+        const r = parseInt(right, 10);
+        return { stdout: '', stderr: '', exitCode: l !== r ? 0 : 1 };
+      }
+      case '-lt': {
+        const l = parseInt(left, 10);
+        const r = parseInt(right, 10);
+        return { stdout: '', stderr: '', exitCode: l < r ? 0 : 1 };
+      }
+      case '-le': {
+        const l = parseInt(left, 10);
+        const r = parseInt(right, 10);
+        return { stdout: '', stderr: '', exitCode: l <= r ? 0 : 1 };
+      }
+      case '-gt': {
+        const l = parseInt(left, 10);
+        const r = parseInt(right, 10);
+        return { stdout: '', stderr: '', exitCode: l > r ? 0 : 1 };
+      }
+      case '-ge': {
+        const l = parseInt(left, 10);
+        const r = parseInt(right, 10);
+        return { stdout: '', stderr: '', exitCode: l >= r ? 0 : 1 };
+      }
+      default:
+        return { stdout: '', stderr: `test: unknown operator: ${op}`, exitCode: 2 };
+    }
+  }
+
+  return { stdout: '', stderr: 'test: too many arguments', exitCode: 2 };
+}
 
 /**
  * エイリアス展開（循環参照検出付き）
@@ -390,30 +610,43 @@ async function executeScript(
   state: ShellState,
   _sourceName?: string
 ): Promise<ExecResult> {
-  // コメント行を除去（行頭が # で始まる行を空行に）
-  const processedContent = content
-    .split('\n')
-    .map((line) => {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('#')) {
-        return '';
-      }
-      return line;
-    })
-    .join('\n');
+  // 行ごとに分割して実行（コマンド置換で前の行の変数を使えるようにするため）
+  const lines = content.split('\n');
 
-  // 複数行をまとめてパース
-  const parseResult = await parseShellCommand(processedContent);
+  let accumulatedStdout = '';
+  let accumulatedStderr = '';
+  let lastExitCode = 0;
 
-  if (!parseResult.ok) {
-    return {
-      stdout: '',
-      stderr: `parse error: ${parseResult.error.message}`,
-      exitCode: 1,
-    };
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // 空行とコメント行はスキップ
+    if (trimmed === '' || trimmed.startsWith('#')) {
+      continue;
+    }
+
+    // 各行を個別にパース・実行
+    const parseResult = await parseShellCommand(line);
+
+    if (!parseResult.ok) {
+      return {
+        stdout: accumulatedStdout,
+        stderr: accumulatedStderr + `parse error: ${parseResult.error.message}`,
+        exitCode: 1,
+      };
+    }
+
+    const result = await executeParseResult(parseResult.value, state);
+    accumulatedStdout += result.stdout;
+    accumulatedStderr += result.stderr;
+    lastExitCode = result.exitCode;
   }
 
-  return executeParseResult(parseResult.value, state);
+  return {
+    stdout: accumulatedStdout,
+    stderr: accumulatedStderr,
+    exitCode: lastExitCode,
+  };
 }
 
 /**
@@ -523,6 +756,7 @@ function moveDirectory(
       if (content.tag === 'err') {
         return { success: false, error: `Cannot read file: ${entry.name}` };
       }
+
       const writeResult = fs.writeFile(destEntryPath, content.val);
       if (writeResult.tag === 'err') {
         return { success: false, error: `Cannot write file: ${entry.name}` };
@@ -615,10 +849,21 @@ async function dispatchExternalCommand(
   // PATH から WASM コマンドを探す
   const binary = findWasmInPath(cmd, state);
   if (binary) {
+    // 環境変数にタイムゾーン情報を追加（WASM ではローカルタイムゾーンを取得できないため）
+    const now = new Date();
+    const envEntries: [string, string][] = Array.from(state.env.entries());
+    envEntries.push(['TZ_OFFSET', (-now.getTimezoneOffset()).toString()]);
+    envEntries.push([
+      'TZ_NAME',
+      Intl.DateTimeFormat().resolvedOptions().timeZone ||
+        now.toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ').pop() ||
+        'UTC',
+    ]);
+
     // CommandInput を構築
     const input: CommandInput = {
       args,
-      env: Array.from(state.env.entries()),
+      env: envEntries,
       cwd: state.cwd,
       stdin,
     };
@@ -803,17 +1048,69 @@ async function executeParseResult(
   const substitutions = new Map<number, string>();
 
   for (const subst of parseResult.substitutions) {
+    // コマンド置換実行中は stdout ストリーミングを一時的に無効化
+    // （出力が TTY に表示されないようにする）
+    const savedCallback = getStdoutCallback();
+    setStdoutCallback(null);
+
     // 再帰的にコマンドを実行
     const substResult = await executeInput(subst.input, state);
     substitutions.set(subst.id, substResult.stdout.trimEnd());
+
+    // コールバックを復元
+    setStdoutCallback(savedCallback);
   }
 
-  // 条件分岐を評価しながら実行
+  // 文を順次実行
   let lastExitCode = 0;
   let accumulatedStdout = '';
   let accumulatedStderr = '';
 
-  for (const element of parseResult.elements) {
+  for (const stmt of parseResult.statements) {
+    const result = await executeStatement(stmt, state, substitutions);
+    lastExitCode = result.exitCode;
+    accumulatedStdout += result.stdout;
+    accumulatedStderr += result.stderr;
+  }
+
+  return {
+    stdout: accumulatedStdout,
+    stderr: accumulatedStderr,
+    exitCode: lastExitCode,
+  };
+}
+
+/**
+ * 文を実行
+ */
+async function executeStatement(
+  stmt: Statement,
+  state: ShellState,
+  substitutions: Map<number, string>
+): Promise<ExecResult> {
+  switch (stmt.tag) {
+    case 'command':
+      return executeConditionalElements(stmt.val, state, substitutions);
+    case 'if-stmt':
+      return executeIfStatement(stmt.val, state, substitutions);
+    case 'for-stmt':
+      return executeForStatement(stmt.val, state, substitutions);
+  }
+}
+
+/**
+ * 条件付き要素列を実行（&& や || でつながったコマンド）
+ */
+async function executeConditionalElements(
+  elements: ConditionalElement[],
+  state: ShellState,
+  substitutions: Map<number, string>
+): Promise<ExecResult> {
+  let lastExitCode = 0;
+  let accumulatedStdout = '';
+  let accumulatedStderr = '';
+
+  for (const element of elements) {
     // 接続子に基づいてスキップ判定
     if (element.connector === 'and' && lastExitCode !== 0) {
       continue;
@@ -826,6 +1123,109 @@ async function executeParseResult(
     lastExitCode = result.exitCode;
     accumulatedStdout += result.stdout;
     accumulatedStderr += result.stderr;
+  }
+
+  return {
+    stdout: accumulatedStdout,
+    stderr: accumulatedStderr,
+    exitCode: lastExitCode,
+  };
+}
+
+/**
+ * if 文を実行
+ */
+async function executeIfStatement(
+  ifStmt: IfStatement,
+  state: ShellState,
+  _substitutions: Map<number, string>
+): Promise<ExecResult> {
+  // 条件を評価
+  const conditionResult = await executeConditionalElements(ifStmt.condition, state, _substitutions);
+
+  let accumulatedStdout = conditionResult.stdout;
+  let accumulatedStderr = conditionResult.stderr;
+
+  if (conditionResult.exitCode === 0) {
+    // then ブランチを実行（body を再パース）
+    const bodyResult = await executeInput(ifStmt.thenBody, state);
+    accumulatedStdout += bodyResult.stdout;
+    accumulatedStderr += bodyResult.stderr;
+    return {
+      stdout: accumulatedStdout,
+      stderr: accumulatedStderr,
+      exitCode: bodyResult.exitCode,
+    };
+  }
+
+  // elif ブランチを順次評価
+  for (const elifBranch of ifStmt.elifBranches) {
+    const elifConditionResult = await executeConditionalElements(elifBranch.condition, state, _substitutions);
+    accumulatedStdout += elifConditionResult.stdout;
+    accumulatedStderr += elifConditionResult.stderr;
+
+    if (elifConditionResult.exitCode === 0) {
+      const bodyResult = await executeInput(elifBranch.body, state);
+      accumulatedStdout += bodyResult.stdout;
+      accumulatedStderr += bodyResult.stderr;
+      return {
+        stdout: accumulatedStdout,
+        stderr: accumulatedStderr,
+        exitCode: bodyResult.exitCode,
+      };
+    }
+  }
+
+  // else ブランチを実行
+  if (ifStmt.elseBody) {
+    const bodyResult = await executeInput(ifStmt.elseBody, state);
+    accumulatedStdout += bodyResult.stdout;
+    accumulatedStderr += bodyResult.stderr;
+    return {
+      stdout: accumulatedStdout,
+      stderr: accumulatedStderr,
+      exitCode: bodyResult.exitCode,
+    };
+  }
+
+  return {
+    stdout: accumulatedStdout,
+    stderr: accumulatedStderr,
+    exitCode: 0,
+  };
+}
+
+/**
+ * for 文を実行
+ */
+async function executeForStatement(
+  forStmt: ForStatement,
+  state: ShellState,
+  substitutions: Map<number, string>
+): Promise<ExecResult> {
+  let accumulatedStdout = '';
+  let accumulatedStderr = '';
+  let lastExitCode = 0;
+
+  // 値リストを展開し、IFS（空白・タブ・改行）で分割
+  const expandedValues: string[] = [];
+  for (const word of forStmt.values) {
+    const expanded = expandWord(word, state.env, substitutions);
+    // 空白・タブ・改行で分割（Bash の IFS と同様）
+    const split = expanded.split(/[\s\t\n]+/).filter(s => s !== '');
+    expandedValues.push(...split);
+  }
+
+  // 各値でイテレート
+  for (const value of expandedValues) {
+    // 変数に値を設定
+    state.env.set(forStmt.variable, value);
+
+    // ボディを実行（body を再パース）
+    const bodyResult = await executeInput(forStmt.body, state);
+    accumulatedStdout += bodyResult.stdout;
+    accumulatedStderr += bodyResult.stderr;
+    lastExitCode = bodyResult.exitCode;
   }
 
   return {

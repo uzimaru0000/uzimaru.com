@@ -39,10 +39,10 @@ impl exports::uzimaru::shell::expander::Guest for ShellImpl {
 
 fn convert_parse_result(result: ast::ParseResult) -> types::ParseResult {
     types::ParseResult {
-        elements: result
-            .elements
+        statements: result
+            .statements
             .into_iter()
-            .map(convert_conditional_element)
+            .map(convert_statement)
             .collect(),
         substitutions: result
             .substitutions
@@ -51,6 +51,43 @@ fn convert_parse_result(result: ast::ParseResult) -> types::ParseResult {
             .collect(),
     }
 }
+
+fn convert_statement(stmt: ast::Statement) -> types::Statement {
+    match stmt {
+        ast::Statement::Command(elements) => {
+            types::Statement::Command(elements.into_iter().map(convert_conditional_element).collect())
+        }
+        ast::Statement::If(if_stmt) => types::Statement::IfStmt(convert_if_statement(if_stmt)),
+        ast::Statement::For(for_stmt) => types::Statement::ForStmt(convert_for_statement(for_stmt)),
+
+    }
+}
+
+fn convert_if_statement(if_stmt: ast::IfStatement) -> types::IfStatement {
+    types::IfStatement {
+        condition: if_stmt.condition.into_iter().map(convert_conditional_element).collect(),
+        then_body: if_stmt.then_body,
+        elif_branches: if_stmt.elif_branches.into_iter().map(convert_elif_branch).collect(),
+        else_body: if_stmt.else_body,
+    }
+}
+
+fn convert_elif_branch(branch: ast::ElifBranch) -> types::ElifBranch {
+    types::ElifBranch {
+        condition: branch.condition.into_iter().map(convert_conditional_element).collect(),
+        body: branch.body,
+    }
+}
+
+fn convert_for_statement(for_stmt: ast::ForStatement) -> types::ForStatement {
+    types::ForStatement {
+        variable: for_stmt.variable,
+        values: for_stmt.values.into_iter().map(convert_parsed_word).collect(),
+        body: for_stmt.body,
+    }
+}
+
+
 
 fn convert_conditional_element(elem: ast::ConditionalElement) -> types::ConditionalElement {
     types::ConditionalElement {

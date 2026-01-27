@@ -150,7 +150,7 @@ export async function parseShellCommand(
 
     // jco が生成するコードでは Result 型は直接値を返す
     // エラーの場合は例外を投げる
-    if ('elements' in result) {
+    if ('statements' in result) {
       return { ok: true, value: result as unknown as ParseResult };
     } else if ('tag' in result) {
       if (result.tag === 'ok') {

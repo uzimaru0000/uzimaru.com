@@ -205,48 +205,56 @@ fn convert_event(event: Event) -> SerEvent {
 
 impl Guest for Markdown {
     fn run(input: CommandInput) -> i32 {
-        if input.args.len() < 2 {
-            eprintln!("markdown: missing file operand");
-            return 1;
-        }
-
-        let path = if input.args[1].starts_with('/') {
-            input.args[1].clone()
+        // 引数がない場合または "-" の場合は stdin から読む
+        let content = if input.args.len() < 2 || input.args[1] == "-" {
+            use std::io::Read;
+            let mut buffer = String::new();
+            match std::io::stdin().read_to_string(&mut buffer) {
+                Ok(_) => buffer,
+                Err(e) => {
+                    eprintln!("markdown: stdin: {}", e);
+                    return 1;
+                }
+            }
         } else {
-            format!("{}/{}", input.cwd.trim_end_matches('/'), &input.args[1])
+            let path = if input.args[1].starts_with('/') {
+                input.args[1].clone()
+            } else {
+                format!("{}/{}", input.cwd.trim_end_matches('/'), &input.args[1])
+            };
+
+            match std::fs::read_to_string(&path) {
+                Ok(c) => c,
+                Err(e) => {
+                    eprintln!("markdown: {}: {}", path, e);
+                    return 1;
+                }
+            }
         };
 
-        match std::fs::read_to_string(&path) {
-            Ok(content) => {
-                let mut options = Options::empty();
-                options.insert(Options::ENABLE_TABLES);
-                options.insert(Options::ENABLE_STRIKETHROUGH);
-                options.insert(Options::ENABLE_TASKLISTS);
-                let parser = Parser::new_ext(&content, options);
-                let events: Vec<SerEvent> = parser.map(convert_event).collect();
+        let mut options = Options::empty();
+        options.insert(Options::ENABLE_TABLES);
+        options.insert(Options::ENABLE_STRIKETHROUGH);
+        options.insert(Options::ENABLE_TASKLISTS);
+        let parser = Parser::new_ext(&content, options);
+        let events: Vec<SerEvent> = parser.map(convert_event).collect();
 
-                // Create OSC payload
-                let payload = serde_json::json!({
-                    "type": "markdown",
-                    "props": {
-                        "events": events
-                    }
-                });
+        // Create OSC payload
+        let payload = serde_json::json!({
+            "type": "markdown",
+            "props": {
+                "events": events
+            }
+        });
 
-                // Output OSC sequence (using ESC \ as terminator instead of BEL)
-                print!(
-                    "\x1b]custom;{}\x1b\\",
-                    serde_json::to_string(&payload).unwrap()
-                );
-                // Explicitly flush stdout to ensure all data is written
-                let _ = std::io::stdout().flush();
-                0
-            }
-            Err(e) => {
-                eprintln!("markdown: {}: {}", path, e);
-                1
-            }
-        }
+        // Output OSC sequence (using ESC \ as terminator instead of BEL)
+        print!(
+            "\x1b]custom;{}\x1b\\",
+            serde_json::to_string(&payload).unwrap()
+        );
+        // Explicitly flush stdout to ensure all data is written
+        let _ = std::io::stdout().flush();
+        0
     }
 }
 

@@ -24,42 +24,42 @@ import 'prismjs/components/prism-toml';
 
 // Token colors for syntax highlighting
 const tokenColors: Record<string, string> = {
-  comment: 'text-term-comment',
-  prolog: 'text-term-comment',
-  doctype: 'text-term-comment',
-  cdata: 'text-term-comment',
-  punctuation: 'text-term-text',
-  property: 'text-term-number',
-  tag: 'text-term-number',
-  boolean: 'text-term-number',
-  number: 'text-term-number',
-  constant: 'text-term-number',
-  symbol: 'text-term-number',
-  deleted: 'text-term-number',
-  selector: 'text-term-string',
-  'attr-name': 'text-term-string',
-  string: 'text-term-string',
-  char: 'text-term-string',
-  builtin: 'text-term-string',
-  inserted: 'text-term-string',
-  operator: 'text-term-text',
-  entity: 'text-term-text',
-  url: 'text-term-text',
-  atrule: 'text-term-keyword',
-  'attr-value': 'text-term-keyword',
-  keyword: 'text-term-keyword',
-  function: 'text-term-function',
-  'class-name': 'text-term-function',
+  comment: 'text-ansi-2',
+  prolog: 'text-ansi-2',
+  doctype: 'text-ansi-2',
+  cdata: 'text-ansi-2',
+  punctuation: 'text-ansi-7',
+  property: 'text-ansi-10',
+  tag: 'text-ansi-10',
+  boolean: 'text-ansi-10',
+  number: 'text-ansi-10',
+  constant: 'text-ansi-10',
+  symbol: 'text-ansi-10',
+  deleted: 'text-ansi-10',
+  selector: 'text-ansi-3',
+  'attr-name': 'text-ansi-3',
+  string: 'text-ansi-3',
+  char: 'text-ansi-3',
+  builtin: 'text-ansi-3',
+  inserted: 'text-ansi-3',
+  operator: 'text-ansi-7',
+  entity: 'text-ansi-7',
+  url: 'text-ansi-7',
+  atrule: 'text-ansi-4',
+  'attr-value': 'text-ansi-4',
+  keyword: 'text-ansi-4',
+  function: 'text-ansi-11',
+  'class-name': 'text-ansi-11',
 };
 
 // Heading class mapping
 const headingClasses: Record<number, string> = {
-  1: 'text-2xl font-bold text-term-keyword mt-4 mb-2',
-  2: 'text-xl font-bold text-term-keyword mt-3.5 mb-1.5',
-  3: 'text-lg font-bold text-term-keyword mt-3 mb-1',
-  4: 'text-base font-bold text-term-keyword mt-2.5 mb-1',
-  5: 'text-sm font-bold text-term-keyword mt-2 mb-1',
-  6: 'text-sm font-bold text-term-keyword mt-2 mb-1',
+  1: 'text-2xl font-bold text-ansi-13 mt-4 mb-2',
+  2: 'text-xl font-bold text-ansi-13 mt-3.5 mb-1.5',
+  3: 'text-lg font-bold text-ansi-13 mt-3 mb-1',
+  4: 'text-base font-bold text-ansi-13 mt-2.5 mb-1',
+  5: 'text-sm font-bold text-ansi-13 mt-2 mb-1',
+  6: 'text-sm font-bold text-ansi-13 mt-2 mb-1',
 };
 
 // Syntax highlighting with Prism
@@ -106,7 +106,7 @@ function tokensToReact(
           : String(token.content);
 
     const tokenType = Array.isArray(token.type) ? token.type[0] : token.type;
-    const colorClass = tokenColors[tokenType] || 'text-term-text';
+    const colorClass = tokenColors[tokenType] || 'text-ansi-7';
 
     return (
       <span key={key} className={colorClass}>
@@ -177,7 +177,7 @@ function eventsToReact(events: MarkdownEvent[]): ReactNode {
 
       case 'BlockQuote':
         return (
-          <blockquote key={key} className="border-l-[3px] border-term-keyword pl-3 my-2 text-term-quote italic">
+          <blockquote key={key} className="border-l-[3px] border-ansi-4 pl-3 my-2 text-ansi-14 italic">
             {children}
           </blockquote>
         );
@@ -186,9 +186,9 @@ function eventsToReact(events: MarkdownEvent[]): ReactNode {
         const codeContent = extractTextContent(children);
         const highlighted = highlightCodeToElements(codeContent, tag.language);
         return (
-          <div key={key} className="font-mono bg-term-bg-dark p-3 rounded border border-term-border my-2 overflow-x-auto whitespace-pre leading-normal">
+          <div key={key} className="font-mono bg-ansi-0 p-3 rounded border border-ansi-8 my-2 overflow-x-auto whitespace-pre leading-normal">
             {tag.language && (
-              <div className="text-term-muted mb-2 text-sm">
+              <div className="text-ansi-8 mb-2 text-sm">
                 {tag.language}
               </div>
             )}
@@ -214,7 +214,7 @@ function eventsToReact(events: MarkdownEvent[]): ReactNode {
 
       case 'Item':
         return (
-          <li key={key} className="my-1 text-term-text">
+          <li key={key} className="my-1 text-ansi-7">
             {children}
           </li>
         );
@@ -246,7 +246,7 @@ function eventsToReact(events: MarkdownEvent[]): ReactNode {
             key={key}
             href={tag.url}
             title={tag.title}
-            className="text-term-keyword underline cursor-pointer"
+            className="text-ansi-4 underline cursor-pointer"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -311,11 +311,11 @@ function eventsToReact(events: MarkdownEvent[]): ReactNode {
 
       case 'TableCell':
         return inTableHead ? (
-          <th key={key} className="border border-term-border-light px-2.5 py-1.5 font-bold text-term-keyword">
+          <th key={key} className="border border-ansi-8 px-2.5 py-1.5 font-bold text-ansi-4">
             {children}
           </th>
         ) : (
-          <td key={key} className="border border-term-border-light px-2.5 py-1.5">
+          <td key={key} className="border border-ansi-8 px-2.5 py-1.5">
             {children}
           </td>
         );
@@ -335,7 +335,7 @@ function eventsToReact(events: MarkdownEvent[]): ReactNode {
 
       case 'Code':
         return (
-          <code key={key} className="font-mono bg-term-bg-code px-1.5 py-0.5 rounded text-term-type">
+          <code key={key} className="font-mono bg-ansi-8 px-1.5 py-0.5 rounded text-ansi-6">
             {event.content}
           </code>
         );
@@ -343,7 +343,7 @@ function eventsToReact(events: MarkdownEvent[]): ReactNode {
       case 'Html':
       case 'InlineHtml':
         return (
-          <span key={key} className="text-term-muted font-mono text-sm">
+          <span key={key} className="text-ansi-8 font-mono text-sm">
             {event.content}
           </span>
         );
@@ -355,7 +355,7 @@ function eventsToReact(events: MarkdownEvent[]): ReactNode {
         return <br key={key} />;
 
       case 'Rule':
-        return <hr key={key} className="border-none border-t border-term-border-light my-4" />;
+        return <hr key={key} className="border-none border-t border-ansi-8 my-4" />;
 
       case 'TaskListMarker':
         return (
@@ -364,13 +364,13 @@ function eventsToReact(events: MarkdownEvent[]): ReactNode {
             type="checkbox"
             checked={event.checked}
             readOnly
-            className="mr-2 accent-term-comment"
+            className="mr-2 accent-ansi-2"
           />
         );
 
       case 'FootnoteReference':
         return (
-          <sup key={key} className="text-term-keyword">
+          <sup key={key} className="text-ansi-4">
             [{event.label}]
           </sup>
         );
@@ -413,11 +413,11 @@ export function MarkdownRenderer({ props }: RendererProps<MarkdownProps>) {
       return eventsToReact(events);
     } catch (error) {
       console.error('Failed to render markdown:', error);
-      return <span className="text-term-error">[Markdown render error]</span>;
+      return <span className="text-ansi-1">[Markdown render error]</span>;
     }
   }, [events]);
 
-  return <div className="leading-relaxed text-term-text">{content}</div>;
+  return <div className="leading-relaxed text-ansi-7">{content}</div>;
 }
 
 export function isMarkdownProps(props: unknown): props is MarkdownProps {

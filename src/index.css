@@ -1,21 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  --color-term-bg: #1e1e1e;
-  --color-term-bg-dark: #1a1a1a;
-  --color-term-bg-code: #2d2d2d;
-  --color-term-text: #d4d4d4;
-  --color-term-string: #ce9178;
-  --color-term-error: #f44747;
-  --color-term-keyword: #569cd6;
-  --color-term-type: #4ec9b0;
-  --color-term-comment: #6a9955;
-  --color-term-function: #dcdcaa;
-  --color-term-number: #b5cea8;
-  --color-term-quote: #9cdcfe;
-  --color-term-muted: #808080;
-  --color-term-border: #333333;
-  --color-term-border-light: #444444;
+  /* ANSI 16-color palette (standard) */
+  --color-ansi-0: #000000;   /* black */
+  --color-ansi-1: #cd3131;   /* red */
+  --color-ansi-2: #0dbc79;   /* green */
+  --color-ansi-3: #e5e510;   /* yellow */
+  --color-ansi-4: #2472c8;   /* blue */
+  --color-ansi-5: #bc3fbc;   /* magenta */
+  --color-ansi-6: #11a8cd;   /* cyan */
+  --color-ansi-7: #e5e5e5;   /* white */
+  --color-ansi-8: #666666;   /* bright black */
+  --color-ansi-9: #f14c4c;   /* bright red */
+  --color-ansi-10: #23d18b;  /* bright green */
+  --color-ansi-11: #f5f543;  /* bright yellow */
+  --color-ansi-12: #3b8eea;  /* bright blue */
+  --color-ansi-13: #d670d6;  /* bright magenta */
+  --color-ansi-14: #29b8db;  /* bright cyan */
+  --color-ansi-15: #ffffff;  /* bright white */
+
 
   --font-mono: 'JetBrains Mono', 'Symbols Nerd Font', monospace;
   --font-sans: 'Noto Sans JP', sans-serif;
